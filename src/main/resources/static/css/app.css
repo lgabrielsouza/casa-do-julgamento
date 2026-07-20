@@ -92,3 +92,7 @@ button {
 
 .feedback.success { display: block; background: var(--success); }
 .feedback.error { display: block; background: var(--error); }
+
+[hidden] {
+    display: none !important;
+}

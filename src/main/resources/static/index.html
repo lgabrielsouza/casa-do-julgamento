@@ -2,58 +2,826 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="description"
+        content="Casa do Julgamento - Uma experiência teatral imersiva que vai levar você a uma reflexão sobre escolhas, consequências e eternidade."
+    >
+
     <title>Casa do Julgamento</title>
-    <link rel="stylesheet" href="/css/app.css">
+
+    <link
+        rel="stylesheet"
+        href="/css/app.css"
+    >
 </head>
+
 <body>
-    <main class="page">
-        <section class="hero">
-            <p class="eyebrow">CASA DO JULGAMENTO</p>
-            <h1>Uma viagem ao seu destino final.</h1>
-            <p>Faça sua inscrição para participar da experiência.</p>
-        </section>
 
-        <section class="card">
-            <h2>Inscrição</h2>
-            <form id="registrationForm">
-                <input type="hidden" id="eventId" value="1">
-                <input type="hidden" id="eventSessionId" value="1">
+<header class="header">
 
-                <label>Nome completo
-                    <input id="fullName" required maxlength="150">
-                </label>
+    <div class="container header-container">
 
-                <label>E-mail
-                    <input id="email" type="email" required>
-                </label>
+        <a href="#inicio" class="logo">
+            <img src="/assets/images/logo-cj.png" alt="Casa do Julgamento" class="logo-image">
+        </a>
 
-                <label>CPF
-                    <input id="cpf" inputmode="numeric" maxlength="11" required>
-                </label>
+        <button
+            class="menu-toggle"
+            id="menuToggle"
+            aria-label="Abrir menu"
+            aria-expanded="false"
+        >
+            ☰
+        </button>
 
-                <label>Telefone
-                    <input id="phone" required>
-                </label>
+        <nav
+            class="nav"
+            id="navigation"
+        >
+            <a href="#sobre">A Experiência</a>
 
-                <label>Tipo de inscrição
-                    <select id="type">
-                        <option value="ATTENDEE">Participante</option>
-                        <option value="STAFF">Staff / Equipe</option>
-                    </select>
-                </label>
+            <a href="#como-funciona">
+                Como Funciona
+            </a>
 
-                <label id="serviceAreaWrapper" hidden>Área de serviço
-                    <input id="serviceArea" placeholder="Ex.: Mídia, Som, Portaria">
-                </label>
+            <a href="#datas">Datas</a>
 
-                <button type="submit">Confirmar inscrição</button>
-            </form>
+            <a href="#faq">Dúvidas</a>
 
-            <div id="feedback" class="feedback" aria-live="polite"></div>
-        </section>
-    </main>
+            <a
+                href="#ingressos"
+                class="nav-ticket"
+            >
+                Ingressos
+            </a>
+        </nav>
 
-    <script src="/js/app.js"></script>
+    </div>
+
+</header>
+
+
+<main>
+
+    <!-- HERO -->
+
+    <section
+        class="hero"
+        id="inicio"
+    >
+
+        <div class="hero-overlay"></div>
+
+        <div class="container hero-content">
+
+            <p class="eyebrow">
+                VOCÊ ESTÁ PREPARADO?
+            </p>
+
+            <h1>
+                Uma viagem ao
+                <span>seu destino final.</span>
+            </h1>
+
+            <p class="hero-description">
+                Uma experiência teatral imersiva onde você
+                não apenas assiste à história.
+                Você caminha por ela.
+            </p>
+
+            <div class="hero-actions">
+
+                <a
+                    href="#ingressos"
+                    class="button button-primary"
+                >
+                    Garanta seu ingresso
+                </a>
+
+                <a
+                    href="#sobre"
+                    class="button button-secondary"
+                >
+                    Conheça a experiência
+                </a>
+
+            </div>
+
+        </div>
+
+        <a
+            href="#contador"
+            class="scroll-indicator"
+            aria-label="Rolar para próxima seção"
+        >
+            ↓
+        </a>
+
+    </section>
+
+
+    <!-- CONTADOR -->
+
+    <section
+        class="countdown-section"
+        id="contador"
+    >
+
+        <div class="container">
+
+            <p class="section-label">
+                ESTÁ CHEGANDO
+            </p>
+
+            <h2>
+                O julgamento começa em
+            </h2>
+
+            <div class="countdown">
+
+                <div class="countdown-item">
+
+                    <span
+                        class="countdown-number"
+                        id="days"
+                    >
+                        00
+                    </span>
+
+                    <span class="countdown-label">
+                        Dias
+                    </span>
+
+                </div>
+
+
+                <div class="countdown-item">
+
+                    <span
+                        class="countdown-number"
+                        id="hours"
+                    >
+                        00
+                    </span>
+
+                    <span class="countdown-label">
+                        Horas
+                    </span>
+
+                </div>
+
+
+                <div class="countdown-item">
+
+                    <span
+                        class="countdown-number"
+                        id="minutes"
+                    >
+                        00
+                    </span>
+
+                    <span class="countdown-label">
+                        Minutos
+                    </span>
+
+                </div>
+
+
+                <div class="countdown-item">
+
+                    <span
+                        class="countdown-number"
+                        id="seconds"
+                    >
+                        00
+                    </span>
+
+                    <span class="countdown-label">
+                        Segundos
+                    </span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- SOBRE -->
+
+    <section
+        class="section about"
+        id="sobre"
+    >
+
+        <div class="container about-grid">
+
+            <div>
+
+                <p class="section-label">
+                    A EXPERIÊNCIA
+                </p>
+
+                <h2 class="section-title">
+                    Você não vem apenas
+                    assistir a uma peça.
+                </h2>
+
+            </div>
+
+
+            <div class="about-content">
+
+                <p>
+                    A Casa do Julgamento é uma experiência
+                    teatral imersiva e interativa que conduz
+                    o público por diferentes ambientes.
+                </p>
+
+                <p>
+                    Em cada sala, uma nova cena da história
+                    acontece diante dos seus olhos.
+                </p>
+
+                <p>
+                    Você acompanha os personagens de perto,
+                    presencia suas escolhas e descobre as
+                    consequências de cada decisão.
+                </p>
+
+                <p class="highlight-text">
+                    Uma experiência que vai muito além
+                    do entretenimento.
+                </p>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- COMO FUNCIONA -->
+
+    <section
+        class="section experience"
+        id="como-funciona"
+    >
+
+        <div class="container">
+
+            <p class="section-label">
+                COMO FUNCIONA
+            </p>
+
+            <h2 class="section-title center">
+                Você faz parte da experiência
+            </h2>
+
+
+            <div class="experience-grid">
+
+                <article class="experience-card">
+
+                    <span class="step-number">
+                        01
+                    </span>
+
+                    <h3>
+                        Você chega
+                    </h3>
+
+                    <p>
+                        Apresente seu ingresso e prepare-se
+                        para começar uma experiência única.
+                    </p>
+
+                </article>
+
+
+                <article class="experience-card">
+
+                    <span class="step-number">
+                        02
+                    </span>
+
+                    <h3>
+                        Entre em um grupo
+                    </h3>
+
+                    <p>
+                        Os participantes são organizados em
+                        grupos para iniciar o percurso.
+                    </p>
+
+                </article>
+
+
+                <article class="experience-card">
+
+                    <span class="step-number">
+                        03
+                    </span>
+
+                    <h3>
+                        Percorra os ambientes
+                    </h3>
+
+                    <p>
+                        Seu grupo avança por diferentes
+                        salas onde cada parte da história
+                        acontece.
+                    </p>
+
+                </article>
+
+
+                <article class="experience-card">
+
+                    <span class="step-number">
+                        04
+                    </span>
+
+                    <h3>
+                        Viva a história
+                    </h3>
+
+                    <p>
+                        Você estará próximo dos personagens
+                        e acompanhará cada decisão.
+                    </p>
+
+                </article>
+
+
+                <article class="experience-card">
+
+                    <span class="step-number">
+                        05
+                    </span>
+
+                    <h3>
+                        Encare as consequências
+                    </h3>
+
+                    <p>
+                        A jornada leva você a refletir sobre
+                        escolhas, vida e eternidade.
+                    </p>
+
+                </article>
+
+
+                <article class="experience-card featured">
+
+                    <span class="step-number">
+                        06
+                    </span>
+
+                    <h3>
+                        O destino final
+                    </h3>
+
+                    <p>
+                        No fim do percurso, uma pergunta
+                        permanece: qual seria o seu destino?
+                    </p>
+
+                </article>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- FRASE -->
+
+    <section class="impact">
+
+        <div class="container impact-content">
+
+            <p>
+                Cada escolha tem uma consequência.
+            </p>
+
+            <h2>
+                E algumas decisões podem mudar
+                <span>toda a eternidade.</span>
+            </h2>
+
+        </div>
+
+    </section>
+
+
+    <!-- DATAS -->
+
+    <section
+        class="section dates"
+        id="datas"
+    >
+
+        <div class="container">
+
+            <p class="section-label">
+                TEMPORADA 2026
+            </p>
+
+            <h2 class="section-title center">
+                Escolha sua data
+            </h2>
+
+
+            <div class="dates-grid">
+
+                <article class="date-card">
+
+                    <p>
+                        OUTUBRO
+                    </p>
+
+                    <strong>
+                        29
+                    </strong>
+
+                    <span>
+                        Quinta-feira
+                    </span>
+
+                </article>
+
+
+                <article class="date-card">
+
+                    <p>
+                        OUTUBRO
+                    </p>
+
+                    <strong>
+                        30
+                    </strong>
+
+                    <span>
+                        Sexta-feira
+                    </span>
+
+                </article>
+
+
+                <article class="date-card">
+
+                    <p>
+                        OUTUBRO
+                    </p>
+
+                    <strong>
+                        31
+                    </strong>
+
+                    <span>
+                        Sábado
+                    </span>
+
+                </article>
+
+
+                <article class="date-card">
+
+                    <p>
+                        NOVEMBRO
+                    </p>
+
+                    <strong>
+                        12
+                    </strong>
+
+                    <span>
+                        Quinta-feira
+                    </span>
+
+                </article>
+
+
+                <article class="date-card">
+
+                    <p>
+                        NOVEMBRO
+                    </p>
+
+                    <strong>
+                        13
+                    </strong>
+
+                    <span>
+                        Sexta-feira
+                    </span>
+
+                </article>
+
+
+                <article class="date-card">
+
+                    <p>
+                        NOVEMBRO
+                    </p>
+
+                    <strong>
+                        14
+                    </strong>
+
+                    <span>
+                        Sábado
+                    </span>
+
+                </article>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- INGRESSOS -->
+
+    <section
+        class="section tickets-section"
+        id="ingressos"
+    >
+
+        <div class="container ticket-cta">
+
+            <div>
+
+                <p class="section-label">
+                    INGRESSOS
+                </p>
+
+                <h2>
+                    Sua jornada começa aqui.
+                </h2>
+
+                <p>
+                    Garanta sua participação na
+                    Casa do Julgamento 2026.
+                </p>
+
+            </div>
+
+
+            <div>
+
+                <button
+                    class="button button-primary ticket-button"
+                    id="ticketButton"
+                >
+                    Garanta seu ingresso
+                </button>
+
+                <small>
+                    As vendas serão disponibilizadas em breve.
+                </small>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- SERVIR -->
+
+    <section class="section volunteer">
+
+        <div class="container volunteer-grid">
+
+            <div>
+
+                <p class="section-label">
+                    FAÇA PARTE
+                </p>
+
+                <h2 class="section-title">
+                    Quer servir na
+                    Casa do Julgamento?
+                </h2>
+
+                <p>
+                    Mídia, som, recepção, portaria,
+                    apoio e diversas outras equipes
+                    trabalham juntas para tornar
+                    essa experiência possível.
+                </p>
+
+            </div>
+
+
+            <div class="volunteer-action">
+
+                <a
+                    href="#"
+                    class="button button-secondary"
+                >
+                    Quero servir
+                </a>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- FAQ -->
+
+    <section
+        class="section faq"
+        id="faq"
+    >
+
+        <div class="container faq-container">
+
+            <p class="section-label">
+                PERGUNTAS FREQUENTES
+            </p>
+
+            <h2 class="section-title">
+                Tire suas dúvidas
+            </h2>
+
+
+            <div class="faq-list">
+
+                <article class="faq-item">
+
+                    <button class="faq-question">
+
+                        O que é a Casa do Julgamento?
+
+                        <span>+</span>
+
+                    </button>
+
+                    <div class="faq-answer">
+
+                        <p>
+                            É uma experiência teatral
+                            imersiva na qual o público
+                            percorre diferentes ambientes
+                            acompanhando uma história
+                            dividida em cenas.
+                        </p>
+
+                    </div>
+
+                </article>
+
+
+                <article class="faq-item">
+
+                    <button class="faq-question">
+
+                        Como funciona o percurso?
+
+                        <span>+</span>
+
+                    </button>
+
+                    <div class="faq-answer">
+
+                        <p>
+                            Os participantes são organizados
+                            em grupos e percorrem diferentes
+                            salas. Em cada ambiente acontece
+                            uma nova cena da história.
+                        </p>
+
+                    </div>
+
+                </article>
+
+
+                <article class="faq-item">
+
+                    <button class="faq-question">
+
+                        Preciso chegar com antecedência?
+
+                        <span>+</span>
+
+                    </button>
+
+                    <div class="faq-answer">
+
+                        <p>
+                            Recomendamos chegar com
+                            antecedência para realizar
+                            o credenciamento e receber
+                            as orientações da equipe.
+                        </p>
+
+                    </div>
+
+                </article>
+
+
+                <article class="faq-item">
+
+                    <button class="faq-question">
+
+                        Como receberei meu ingresso?
+
+                        <span>+</span>
+
+                    </button>
+
+                    <div class="faq-answer">
+
+                        <p>
+                            As informações definitivas sobre
+                            compra, emissão e validação dos
+                            ingressos serão divulgadas em breve.
+                        </p>
+
+                    </div>
+
+                </article>
+
+            </div>
+
+        </div>
+
+    </section>
+
+</main>
+
+
+<footer class="footer">
+
+    <div class="container footer-container">
+
+        <div>
+            <img
+                src="/assets/images/logo-cj.png"
+                alt="Casa do Julgamento"
+                class="footer-logo-image"
+            >         
+           <p>
+                Casa do Julgamento
+            </p>
+
+        </div>
+
+
+        <div class="footer-links">
+
+            <a href="#sobre">
+                A experiência
+            </a>
+
+            <a href="#datas">
+                Datas
+            </a>
+
+            <a href="#ingressos">
+                Ingressos
+            </a>
+
+        </div>
+
+
+        <p class="copyright">
+
+            © 2026 Casa do Julgamento.
+            Todos os direitos reservados.
+
+        </p>
+
+    </div>
+
+</footer>
+
+
+<div
+    class="toast"
+    id="toast"
+    role="status"
+>
+    As vendas de ingressos estarão disponíveis em breve.
+</div>
+
+
+<script src="/js/app.js"></script>
+
 </body>
 </html>

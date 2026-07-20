@@ -21,6 +21,7 @@ public class SecurityConfig {
                     "/index.html",
                     "/css/**",
                     "/js/**",
+                    "/assets/**",
                     "/api/registrations",
                     "/api/tickets/qr/**"
                 ).permitAll()

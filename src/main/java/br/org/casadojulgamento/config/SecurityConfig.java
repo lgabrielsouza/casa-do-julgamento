@@ -15,21 +15,24 @@ public class SecurityConfig {
         http
             .csrf(csrf -> csrf.disable())
 
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers(
-                    "/",
-                    "/index.html",
-                    "/css/**",
-                    "/js/**",
-                    "/assets/**",
-                    "/api/registrations",
-                    "/api/tickets/qr/**"
-                ).permitAll()
+                .authorizeHttpRequests(auth -> auth
+                    .requestMatchers(
+                        "/",
+                        "/index.html",
+                        "/favicon.ico",
+                        "/error",
+                        "/css/**",
+                        "/js/**",
+                        "/assets/**",
+                        "/.well-known/**",
+                        "/api/registrations",
+                        "/api/tickets/qr/**"
+                    ).permitAll()
 
-                .requestMatchers("/h2-console/**").permitAll()
+                    .requestMatchers("/h2-console/**").permitAll()
 
-                .anyRequest().authenticated()
-            )
+                    .anyRequest().authenticated()
+                )
 
             .httpBasic(Customizer.withDefaults())
 

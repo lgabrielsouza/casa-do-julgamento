@@ -1,100 +1,340 @@
-const form = document.getElementById("registrationForm");
-const type = document.getElementById("type");
-const serviceAreaWrapper = document.getElementById("serviceAreaWrapper");
-const serviceArea = document.getElementById("serviceArea");
-const feedback = document.getElementById("feedback");
+const menuToggle =
+    document.getElementById(
+        "menuToggle"
+    );
 
-function updateServiceAreaVisibility() {
-    const isStaff = type.value === "STAFF";
+const navigation =
+    document.getElementById(
+        "navigation"
+    );
 
-    serviceAreaWrapper.hidden = !isStaff;
-    serviceArea.required = isStaff;
 
-    if (!isStaff) {
-        serviceArea.value = "";
+menuToggle.addEventListener(
+    "click",
+    () => {
+
+        const isOpen =
+            navigation.classList.toggle(
+                "open"
+            );
+
+        document.body
+            .classList
+            .toggle(
+                "menu-open",
+                isOpen
+            );
+
+        menuToggle.setAttribute(
+            "aria-expanded",
+            isOpen
+        );
+
+        menuToggle.textContent =
+            isOpen
+                ? "✕"
+                : "☰";
     }
+);
+
+
+navigation
+    .querySelectorAll("a")
+    .forEach(link => {
+
+        link.addEventListener(
+            "click",
+            () => {
+
+                navigation
+                    .classList
+                    .remove("open");
+
+                document.body
+                    .classList
+                    .remove(
+                        "menu-open"
+                    );
+
+                menuToggle
+                    .setAttribute(
+                        "aria-expanded",
+                        "false"
+                    );
+
+                menuToggle.textContent =
+                    "☰";
+            }
+        );
+
+    });
+
+
+/* CONTADOR */
+
+
+const eventDate =
+    new Date(
+        "2026-10-29T18:00:00-03:00"
+    );
+
+
+const daysElement =
+    document.getElementById(
+        "days"
+    );
+
+const hoursElement =
+    document.getElementById(
+        "hours"
+    );
+
+const minutesElement =
+    document.getElementById(
+        "minutes"
+    );
+
+const secondsElement =
+    document.getElementById(
+        "seconds"
+    );
+
+
+function formatNumber(
+    value
+) {
+
+    return String(value)
+        .padStart(
+            2,
+            "0"
+        );
 }
 
-type.addEventListener("change", updateServiceAreaVisibility);
 
-updateServiceAreaVisibility();
+function updateCountdown() {
 
-form.addEventListener("submit", async (event) => {
-    event.preventDefault();
+    const now =
+        new Date();
 
-    feedback.className = "feedback";
-    feedback.textContent = "";
+    const difference =
+        eventDate - now;
 
-    const payload = {
-        eventId: Number(document.getElementById("eventId").value),
-        eventSessionId: Number(
-            document.getElementById("eventSessionId").value
-        ),
-        fullName: document.getElementById("fullName").value.trim(),
-        email: document.getElementById("email").value.trim(),
-        cpf: document
-            .getElementById("cpf")
-            .value
-            .replace(/\D/g, ""),
-        phone: document.getElementById("phone").value.trim(),
-        type: type.value,
-        serviceArea:
-            type.value === "STAFF"
-                ? serviceArea.value.trim()
-                : null
-    };
 
-    try {
-        const response = await fetch("/api/registrations", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(payload)
-        });
+    if (
+        difference <= 0
+    ) {
 
-        const data = await response.json();
+        daysElement.textContent =
+            "00";
 
-        if (!response.ok) {
-            throw new Error(
-                data.message ||
-                "Não foi possível concluir a inscrição."
-            );
-        }
+        hoursElement.textContent =
+            "00";
 
-        feedback.className = "feedback success";
+        minutesElement.textContent =
+            "00";
 
-        feedback.innerHTML = `
-            <strong>Inscrição confirmada!</strong>
-            <br><br>
+        secondsElement.textContent =
+            "00";
 
-            Participante: ${data.fullName}
-
-            <div class="ticket">
-                <h3>Seu ingresso</h3>
-
-                <img
-                    src="/api/tickets/qr/${data.qrToken}"
-                    alt="QR Code do ingresso"
-                    width="220"
-                    height="220"
-                >
-
-                <p>Apresente este QR Code na entrada do evento.</p>
-
-                <p class="ticket-token">
-                    ${data.qrToken}
-                </p>
-            </div>
-        `;
-
-        form.reset();
-        updateServiceAreaVisibility();
-
-    } catch (error) {
-        console.error(error);
-
-        feedback.className = "feedback error";
-        feedback.textContent = error.message;
+        return;
     }
-});
+
+
+    const days =
+        Math.floor(
+            difference /
+            (
+                1000 *
+                60 *
+                60 *
+                24
+            )
+        );
+
+
+    const hours =
+        Math.floor(
+            (
+                difference /
+                (
+                    1000 *
+                    60 *
+                    60
+                )
+            ) % 24
+        );
+
+
+    const minutes =
+        Math.floor(
+            (
+                difference /
+                (
+                    1000 *
+                    60
+                )
+            ) % 60
+        );
+
+
+    const seconds =
+        Math.floor(
+            (
+                difference /
+                1000
+            ) % 60
+        );
+
+
+    daysElement.textContent =
+        formatNumber(days);
+
+    hoursElement.textContent =
+        formatNumber(hours);
+
+    minutesElement.textContent =
+        formatNumber(minutes);
+
+    secondsElement.textContent =
+        formatNumber(seconds);
+
+}
+
+
+updateCountdown();
+
+
+setInterval(
+    updateCountdown,
+    1000
+);
+
+
+/* FAQ */
+
+
+const faqItems =
+    document.querySelectorAll(
+        ".faq-item"
+    );
+
+
+faqItems.forEach(
+    item => {
+
+        const question =
+            item.querySelector(
+                ".faq-question"
+            );
+
+        const answer =
+            item.querySelector(
+                ".faq-answer"
+            );
+
+
+        question.addEventListener(
+            "click",
+            () => {
+
+                const isActive =
+                    item
+                        .classList
+                        .contains(
+                            "active"
+                        );
+
+
+                faqItems.forEach(
+                    currentItem => {
+
+                        currentItem
+                            .classList
+                            .remove(
+                                "active"
+                            );
+
+                        const currentAnswer =
+                            currentItem
+                                .querySelector(
+                                    ".faq-answer"
+                                );
+
+                        currentAnswer.style.maxHeight =
+                            null;
+
+                    }
+                );
+
+
+                if (
+                    !isActive
+                ) {
+
+                    item
+                        .classList
+                        .add(
+                            "active"
+                        );
+
+                    answer.style.maxHeight =
+                        answer.scrollHeight +
+                        "px";
+
+                }
+
+            }
+        );
+
+    }
+);
+
+
+/* BOTÃO DE INGRESSO */
+
+
+const ticketButton =
+    document.getElementById(
+        "ticketButton"
+    );
+
+const toast =
+    document.getElementById(
+        "toast"
+    );
+
+
+let toastTimeout;
+
+
+ticketButton.addEventListener(
+    "click",
+    () => {
+
+        toast.classList.add(
+            "visible"
+        );
+
+
+        clearTimeout(
+            toastTimeout
+        );
+
+
+        toastTimeout =
+            setTimeout(
+                () => {
+
+                    toast
+                        .classList
+                        .remove(
+                            "visible"
+                        );
+
+                },
+                3500
+            );
+
+    }
+);

@@ -1,17 +1,20 @@
 spring:
   application:
     name: casa-do-julgamento
+
   profiles:
     active: dev
+
   jpa:
     open-in-view: false
     hibernate:
       ddl-auto: validate
+
   flyway:
     enabled: true
 
 server:
-  port: ${PORT :8080}
+  port: ${PORT:8080}
 
 security:
   jwt:

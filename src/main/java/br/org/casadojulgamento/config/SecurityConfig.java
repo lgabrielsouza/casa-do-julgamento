@@ -29,7 +29,8 @@ public class SecurityConfig {
                     "/.well-known/**",
                     "/api/registrations",
                     "/api/tickets/qr/**",
-                    "/api/users/**"
+                    "/api/users/**",
+                    "/api/auth/login"
                 ).permitAll()
 
                 .requestMatchers("/h2-console/**").permitAll()

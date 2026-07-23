@@ -1,21 +1,31 @@
 package br.org.casadojulgamento.config;
 
+import br.org.casadojulgamento.security.jwt.JwtAuthenticationFilter;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
+@RequiredArgsConstructor
 public class SecurityConfig {
+
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
         http
             .csrf(csrf -> csrf.disable())
+
+            .sessionManagement(session ->
+                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            )
 
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
@@ -27,23 +37,20 @@ public class SecurityConfig {
                     "/js/**",
                     "/assets/**",
                     "/.well-known/**",
-                    "/api/registrations",
-                    "/api/tickets/qr/**",
-                    "/api/users/**",
-                    "/api/auth/login"
+                    "/api/auth/login",
+                    "/api/registrations"
                 ).permitAll()
 
-                .requestMatchers("/h2-console/**").permitAll()
+                .requestMatchers("/api/users/**")
+                .hasRole("ADMIN")
 
-                .anyRequest().authenticated()
+                .anyRequest()
+                .authenticated()
             )
 
-            .httpBasic(Customizer.withDefaults())
-
-            .headers(headers ->
-                headers.frameOptions(frame ->
-                    frame.sameOrigin()
-                )
+            .addFilterBefore(
+                jwtAuthenticationFilter,
+                UsernamePasswordAuthenticationFilter.class
             );
 
         return http.build();

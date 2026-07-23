@@ -1,0 +1,521 @@
+.portaria-page {
+  width: 100%;
+}
+
+.portaria-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 25px;
+}
+
+.portaria-eyebrow {
+  margin-bottom: 5px;
+  color: #b00000;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.3px;
+  text-transform: uppercase;
+}
+
+.portaria-heading h1 {
+  margin-bottom: 7px;
+  color: #181818;
+  font-size: 30px;
+}
+
+.portaria-heading > div:first-child > p:last-child {
+  color: #777777;
+  font-size: 14px;
+}
+
+.portaria-status {
+  display: flex;
+  flex-direction: column;
+  min-width: 145px;
+  padding: 11px 15px;
+  border: 1px solid #dfe9e1;
+  border-radius: 9px;
+  background: #f5fbf6;
+}
+
+.portaria-status span {
+  margin-bottom: 3px;
+  color: #7c8d7e;
+  font-size: 9px;
+}
+
+.portaria-status strong {
+  color: #27813a;
+  font-size: 13px;
+}
+
+/* PAGTICKETS */
+
+.portaria-pagtickets {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 20px;
+  padding: 20px 22px;
+  border: 1px solid #e2e2e2;
+  border-left: 4px solid #b00000;
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.pagtickets-icon {
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  background: #171717;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.pagtickets-content {
+  flex: 1;
+}
+
+.pagtickets-content > span {
+  display: block;
+  margin-bottom: 3px;
+  color: #b00000;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+}
+
+.pagtickets-content h2 {
+  margin-bottom: 5px;
+  color: #222222;
+  font-size: 16px;
+}
+
+.pagtickets-content p {
+  max-width: 700px;
+  color: #777777;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.pagtickets-badge {
+  flex-shrink: 0;
+  padding: 7px 10px;
+  border-radius: 20px;
+  background: #f1f1f1;
+  color: #555555;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+/* GRID */
+
+.portaria-grid {
+  display: grid;
+  grid-template-columns: 0.85fr 1.15fr;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.portaria-search-card,
+.portaria-result-card {
+  min-height: 400px;
+  padding: 22px;
+  border: 1px solid #e5e5e5;
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.portaria-card-header {
+  margin-bottom: 24px;
+}
+
+.portaria-card-header h2 {
+  margin-bottom: 5px;
+  color: #222222;
+  font-size: 17px;
+}
+
+.portaria-card-header p {
+  color: #8c8c8c;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+/* BUSCA */
+
+.portaria-search-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.portaria-search-form label {
+  color: #444444;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.portaria-search-form input {
+  width: 100%;
+  height: 49px;
+  padding: 0 14px;
+  border: 1px solid #dcdcdc;
+  border-radius: 9px;
+  outline: none;
+  background: #fafafa;
+  font-size: 12px;
+}
+
+.portaria-search-form input:focus {
+  border-color: #b00000;
+  background: #ffffff;
+}
+
+.portaria-search-form button {
+  height: 45px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  background: #181818;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.portaria-search-form button:hover {
+  background: #b00000;
+}
+
+.portaria-search-help {
+  margin-top: 22px;
+  padding: 15px;
+  border-radius: 8px;
+  background: #f7f7f7;
+}
+
+.portaria-search-help strong {
+  display: block;
+  margin-bottom: 10px;
+  color: #666666;
+  font-size: 10px;
+}
+
+.portaria-search-help > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.portaria-search-help span {
+  padding: 5px 8px;
+  border-radius: 20px;
+  background: #ffffff;
+  color: #777777;
+  font-size: 9px;
+}
+
+/* RESULTADO */
+
+.portaria-result-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.portaria-waiting,
+.portaria-not-found {
+  width: 100%;
+  text-align: center;
+}
+
+.portaria-waiting-icon,
+.portaria-result-icon {
+  width: 66px;
+  height: 66px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 15px;
+  border-radius: 50%;
+  font-size: 25px;
+  font-weight: 900;
+}
+
+.portaria-waiting-icon {
+  background: #f1f1f1;
+  color: #999999;
+}
+
+.portaria-result-icon {
+  background: #fff0f0;
+  color: #b00000;
+}
+
+.portaria-waiting strong {
+  display: block;
+  margin-bottom: 6px;
+  color: #444444;
+  font-size: 14px;
+}
+
+.portaria-waiting p,
+.portaria-not-found p {
+  color: #929292;
+  font-size: 10px;
+}
+
+.portaria-not-found h2 {
+  margin-bottom: 6px;
+  color: #333333;
+  font-size: 18px;
+}
+
+.portaria-not-found button {
+  margin-top: 18px;
+  min-height: 39px;
+  padding: 0 15px;
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+  background: #181818;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+/* PARTICIPANTE */
+
+.portaria-participant-result {
+  width: 100%;
+}
+
+.participant-result-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 15px;
+  margin-bottom: 18px;
+}
+
+.participant-result-header > div > span {
+  display: block;
+  margin-bottom: 4px;
+  color: #b00000;
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.participant-result-header h2 {
+  color: #222222;
+  font-size: 20px;
+}
+
+.participant-active {
+  padding: 5px 9px;
+  border-radius: 20px;
+  background: #eef7f0;
+  color: #27813a;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.participant-data-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 9px;
+  margin-bottom: 16px;
+}
+
+.participant-data-grid > div {
+  display: flex;
+  flex-direction: column;
+  padding: 11px;
+  border: 1px solid #eeeeee;
+  border-radius: 7px;
+  background: #fafafa;
+}
+
+.participant-data-grid span {
+  margin-bottom: 4px;
+  color: #999999;
+  font-size: 8px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.participant-data-grid strong {
+  color: #333333;
+  font-size: 10px;
+}
+
+/* INSTRUÇÃO */
+
+.validation-instruction {
+  margin-bottom: 10px;
+  padding: 14px 15px;
+  border-radius: 8px;
+}
+
+.validation-instruction.pagtickets {
+  border-left: 4px solid #345da7;
+  background: #f2f5fb;
+}
+
+.validation-instruction.interno {
+  border-left: 4px solid #27813a;
+  background: #f2f8f3;
+}
+
+.validation-instruction strong {
+  display: block;
+  margin-bottom: 5px;
+  color: #333333;
+  font-size: 11px;
+}
+
+.validation-instruction p {
+  margin-bottom: 5px;
+  color: #666666;
+  font-size: 10px;
+}
+
+.validation-instruction span {
+  color: #888888;
+  font-size: 9px;
+}
+
+.validation-instruction button {
+  margin-top: 10px;
+  min-height: 37px;
+  padding: 0 13px;
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+  background: #27813a;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.nova-consulta-button {
+  width: 100%;
+  min-height: 39px;
+  border: 1px solid #dddddd;
+  border-radius: 7px;
+  cursor: pointer;
+  background: #ffffff;
+  color: #555555;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.nova-consulta-button:hover {
+  border-color: #b00000;
+  color: #b00000;
+}
+
+/* ORIGENS */
+
+.portaria-origens {
+  padding: 20px;
+  border: 1px solid #e5e5e5;
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.portaria-origens-header {
+  margin-bottom: 17px;
+}
+
+.portaria-origens-header h2 {
+  margin-bottom: 4px;
+  color: #222222;
+  font-size: 16px;
+}
+
+.portaria-origens-header p {
+  color: #929292;
+  font-size: 10px;
+}
+
+.origens-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.origem-card {
+  position: relative;
+  padding: 17px;
+  border: 1px solid #eeeeee;
+  border-radius: 9px;
+  background: #fafafa;
+}
+
+.origem-number {
+  display: block;
+  margin-bottom: 12px;
+  color: #b00000;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.origem-card h3 {
+  margin-bottom: 5px;
+  color: #292929;
+  font-size: 13px;
+}
+
+.origem-card p {
+  margin-bottom: 12px;
+  color: #888888;
+  font-size: 9px;
+}
+
+.origem-card strong {
+  color: #555555;
+  font-size: 9px;
+  text-transform: uppercase;
+}
+
+/* RESPONSIVO */
+
+@media (max-width: 950px) {
+  .portaria-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .origens-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .portaria-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .portaria-status {
+    min-width: 0;
+  }
+
+  .portaria-pagtickets {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .participant-data-grid {
+    grid-template-columns: 1fr;
+  }
+}

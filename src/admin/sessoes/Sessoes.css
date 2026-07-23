@@ -1,0 +1,475 @@
+.sessoes-page {
+  width: 100%;
+}
+
+.sessoes-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 28px;
+}
+
+.sessoes-eyebrow {
+  margin-bottom: 5px;
+  color: #b00000;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.3px;
+  text-transform: uppercase;
+}
+
+.sessoes-heading h1 {
+  margin-bottom: 7px;
+  color: #181818;
+  font-size: 30px;
+}
+
+.sessoes-heading > div > p:last-child {
+  color: #777777;
+  font-size: 14px;
+}
+
+.nova-sessao-button {
+  min-height: 42px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  background: #b00000;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.nova-sessao-button:hover {
+  background: #8f0000;
+}
+
+/* EVENTO */
+
+.sessoes-evento {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 20px;
+  padding: 18px 20px;
+  border: 1px solid #e5e5e5;
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.sessoes-evento > div {
+  display: flex;
+  flex-direction: column;
+}
+
+.sessoes-evento span {
+  margin-bottom: 4px;
+  color: #929292;
+  font-size: 11px;
+}
+
+.sessoes-evento strong {
+  color: #252525;
+  font-size: 15px;
+}
+
+.sessoes-evento select {
+  min-width: 250px;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid #dddddd;
+  border-radius: 8px;
+  outline: none;
+  background: #fafafa;
+}
+
+/* DATAS */
+
+.sessoes-datas {
+  margin-bottom: 20px;
+  padding: 20px;
+  border: 1px solid #e5e5e5;
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.sessoes-datas-header h2 {
+  margin-bottom: 4px;
+  color: #202020;
+  font-size: 16px;
+}
+
+.sessoes-datas-header p {
+  color: #929292;
+  font-size: 11px;
+}
+
+.datas-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.data-button {
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px solid #dddddd;
+  border-radius: 8px;
+  cursor: pointer;
+  background: #ffffff;
+  color: #555555;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.data-button:hover {
+  border-color: #b00000;
+  color: #b00000;
+}
+
+.data-button.active {
+  border-color: #b00000;
+  background: #b00000;
+  color: #ffffff;
+}
+
+/* CARD */
+
+.sessoes-card {
+  overflow: hidden;
+  border: 1px solid #e5e5e5;
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.sessoes-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 20px 22px;
+  border-bottom: 1px solid #eeeeee;
+}
+
+.sessoes-card-header h2 {
+  margin-bottom: 4px;
+  color: #202020;
+  font-size: 17px;
+}
+
+.sessoes-card-header > div > span {
+  color: #929292;
+  font-size: 11px;
+}
+
+.sessoes-total {
+  padding: 6px 10px;
+  border-radius: 20px;
+  background: #f4f4f4;
+  color: #666666;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+/* TABELA */
+
+.sessoes-table-wrapper {
+  overflow-x: auto;
+}
+
+.sessoes-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.sessoes-table th,
+.sessoes-table td {
+  padding: 17px 22px;
+  text-align: left;
+  border-bottom: 1px solid #eeeeee;
+}
+
+.sessoes-table th {
+  background: #fafafa;
+  color: #777777;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+}
+
+.sessoes-table td {
+  color: #555555;
+  font-size: 13px;
+}
+
+.sessoes-table td strong {
+  color: #242424;
+}
+
+.sessoes-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* OCUPAÇÃO */
+
+.ocupacao-cell {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 150px;
+}
+
+.ocupacao-bar {
+  width: 100px;
+  height: 7px;
+  overflow: hidden;
+  border-radius: 20px;
+  background: #ededed;
+}
+
+.ocupacao-value {
+  height: 100%;
+  border-radius: 20px;
+  background: #b00000;
+}
+
+.ocupacao-cell span {
+  min-width: 32px;
+  color: #666666;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+/* STATUS */
+
+.sessao-status {
+  display: inline-flex;
+  padding: 5px 9px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.sessao-status.disponivel {
+  background: #eef7f0;
+  color: #27813a;
+}
+
+.sessao-status.lotada {
+  background: #fff0f0;
+  color: #b00000;
+}
+
+.sessao-action {
+  padding: 7px 11px;
+  border: 1px solid #dddddd;
+  border-radius: 7px;
+  cursor: pointer;
+  background: #ffffff;
+  color: #555555;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.sessao-action:hover {
+  border-color: #b00000;
+  color: #b00000;
+}
+
+/* SEM SESSÕES */
+
+.sessoes-empty {
+  padding: 55px 20px;
+  text-align: center;
+}
+
+.sessoes-empty strong {
+  display: block;
+  margin-bottom: 7px;
+  color: #333333;
+  font-size: 15px;
+}
+
+.sessoes-empty p {
+  margin-bottom: 18px;
+  color: #888888;
+  font-size: 12px;
+}
+
+.sessoes-empty button {
+  min-height: 38px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+  background: #b00000;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+/* MODAL */
+
+.sessao-modal-overlay {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.62);
+}
+
+.sessao-modal {
+  width: 100%;
+  max-width: 570px;
+  max-height: 90vh;
+  overflow-y: auto;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.35);
+}
+
+.sessao-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 22px 24px;
+  border-bottom: 1px solid #eeeeee;
+}
+
+.sessao-modal-header span {
+  display: block;
+  margin-bottom: 4px;
+  color: #b00000;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.sessao-modal-header h2 {
+  color: #202020;
+  font-size: 21px;
+}
+
+.sessao-modal-close {
+  border: none;
+  cursor: pointer;
+  background: transparent;
+  color: #777777;
+  font-size: 27px;
+}
+
+/* FORMULÁRIO */
+
+.sessao-form {
+  padding: 24px;
+}
+
+.sessao-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.sessao-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-bottom: 18px;
+}
+
+.sessao-form-group label {
+  color: #333333;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.sessao-form-group input,
+.sessao-form-group select {
+  width: 100%;
+  height: 43px;
+  padding: 0 12px;
+  border: 1px solid #dcdcdc;
+  border-radius: 8px;
+  outline: none;
+  background: #fafafa;
+  color: #333333;
+  font: inherit;
+  font-size: 13px;
+}
+
+.sessao-form-group input:focus,
+.sessao-form-group select:focus {
+  border-color: #b00000;
+  background: #ffffff;
+}
+
+.sessao-form-group small {
+  color: #929292;
+  font-size: 10px;
+}
+
+.sessao-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 6px;
+}
+
+.sessao-cancel-button,
+.sessao-save-button {
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.sessao-cancel-button {
+  border: 1px solid #dddddd;
+  background: #ffffff;
+  color: #555555;
+}
+
+.sessao-save-button {
+  border: none;
+  background: #b00000;
+  color: #ffffff;
+}
+
+.sessao-save-button:hover {
+  background: #8f0000;
+}
+
+/* RESPONSIVO */
+
+@media (max-width: 700px) {
+  .sessoes-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .sessoes-evento {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .sessoes-evento select {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .sessao-form-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}

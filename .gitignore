@@ -24,3 +24,8 @@ dist-ssr
 *.sw?
 
 target/
+
+.env
+.env.*
+
+Thumbs.db

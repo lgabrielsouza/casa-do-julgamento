@@ -1,0 +1,182 @@
+.evento-details-modal {
+  width: 100%;
+  max-width: 700px;
+  max-height: 90vh;
+  overflow-y: auto;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.35);
+}
+
+.evento-details-content {
+  padding: 24px;
+}
+
+.evento-details-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 22px;
+}
+
+.evento-details-status > span:last-child {
+  color: #777777;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.evento-details-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.evento-details-grid > div {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 15px;
+  border: 1px solid #eeeeee;
+  border-radius: 9px;
+  background: #fafafa;
+}
+
+.evento-details-grid span,
+.evento-details-section > span {
+  color: #888888;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.evento-details-grid strong {
+  color: #292929;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.evento-details-section {
+  margin-top: 18px;
+  padding: 16px;
+  border: 1px solid #eeeeee;
+  border-radius: 9px;
+}
+
+.evento-details-section p {
+  margin-top: 8px;
+  color: #555555;
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.evento-details-section a {
+  display: inline-flex;
+  margin-top: 9px;
+  color: #b00000;
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.evento-details-section a:hover {
+  text-decoration: underline;
+}
+
+.evento-details-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 17px 24px;
+  border-top: 1px solid #eeeeee;
+}
+
+.evento-details-actions button {
+  min-height: 40px;
+  padding: 0 17px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  background: #b00000;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.evento-confirm-modal {
+  width: 100%;
+  max-width: 430px;
+  padding: 28px;
+  border-radius: 14px;
+  background: #ffffff;
+  text-align: center;
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.35);
+}
+
+.evento-confirm-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  margin-bottom: 16px;
+  border-radius: 50%;
+  background: #fdecec;
+  color: #b00000;
+  font-size: 24px;
+  font-weight: 900;
+}
+
+.evento-confirm-modal h2 {
+  margin-bottom: 10px;
+  color: #202020;
+  font-size: 21px;
+}
+
+.evento-confirm-modal > p {
+  margin-bottom: 20px;
+  color: #666666;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.evento-confirm-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.evento-danger-button {
+  min-height: 40px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  background: #b00000;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.evento-danger-button:hover {
+  background: #8f0000;
+}
+
+.evento-danger-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+@media (max-width: 700px) {
+  .evento-details-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .evento-confirm-actions {
+    flex-direction: column-reverse;
+  }
+
+  .evento-confirm-actions button {
+    width: 100%;
+  }
+}

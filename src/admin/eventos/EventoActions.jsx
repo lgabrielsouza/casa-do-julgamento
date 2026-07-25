@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 
+import './EventoActions.css'
+
 function EventoActions({
   evento,
   onEditar,
@@ -7,11 +9,10 @@ function EventoActions({
   onDesativar,
 }) {
   const [aberto, setAberto] = useState(false)
-
   const menuRef = useRef(null)
 
   useEffect(() => {
-    function fechar(event) {
+    function fecharAoClicarFora(event) {
       if (
         menuRef.current &&
         !menuRef.current.contains(event.target)
@@ -20,14 +21,39 @@ function EventoActions({
       }
     }
 
-    document.addEventListener('mousedown', fechar)
+    function fecharComEscape(event) {
+      if (event.key === 'Escape') {
+        setAberto(false)
+      }
+    }
 
-    return () =>
+    document.addEventListener(
+      'mousedown',
+      fecharAoClicarFora,
+    )
+
+    document.addEventListener(
+      'keydown',
+      fecharComEscape,
+    )
+
+    return () => {
       document.removeEventListener(
         'mousedown',
-        fechar,
+        fecharAoClicarFora,
       )
+
+      document.removeEventListener(
+        'keydown',
+        fecharComEscape,
+      )
+    }
   }, [])
+
+  function executarAcao(callback) {
+    setAberto(false)
+    callback(evento)
+  }
 
   return (
     <div
@@ -36,43 +62,74 @@ function EventoActions({
     >
       <button
         type="button"
-        className="evento-actions-button"
-        onClick={() => setAberto(!aberto)}
+        className="evento-actions-trigger"
+        aria-label={`Abrir ações do evento ${evento.name}`}
+        aria-haspopup="menu"
+        aria-expanded={aberto}
+        onClick={() =>
+          setAberto((estadoAtual) => !estadoAtual)
+        }
       >
-        ⋮
+        <span aria-hidden="true">⋮</span>
       </button>
 
       {aberto && (
-        <div className="evento-actions-menu">
+        <div
+          className="evento-actions-menu"
+          role="menu"
+        >
           <button
             type="button"
-            onClick={() => {
-              setAberto(false)
-              onEditar(evento)
-            }}
+            role="menuitem"
+            onClick={() =>
+              executarAcao(onVisualizar)
+            }
           >
-            ✏️ Editar
+            <span
+              className="evento-actions-icon"
+              aria-hidden="true"
+            >
+              👁
+            </span>
+
+            <span>Visualizar</span>
           </button>
 
           <button
             type="button"
-            onClick={() => {
-              setAberto(false)
-              onVisualizar(evento)
-            }}
+            role="menuitem"
+            onClick={() =>
+              executarAcao(onEditar)
+            }
           >
-            👁️ Visualizar
+            <span
+              className="evento-actions-icon"
+              aria-hidden="true"
+            >
+              ✏
+            </span>
+
+            <span>Editar</span>
           </button>
+
+          <div className="evento-actions-divider" />
 
           <button
             type="button"
-            className="danger"
-            onClick={() => {
-              setAberto(false)
-              onDesativar(evento)
-            }}
+            role="menuitem"
+            className="evento-actions-danger"
+            onClick={() =>
+              executarAcao(onDesativar)
+            }
           >
-            🚫 Desativar
+            <span
+              className="evento-actions-icon"
+              aria-hidden="true"
+            >
+              ⛔
+            </span>
+
+            <span>Desativar</span>
           </button>
         </div>
       )}

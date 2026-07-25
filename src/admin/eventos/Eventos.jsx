@@ -1,14 +1,15 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import {
   atualizarEvento,
   buscarEventoPorId,
   criarEvento,
-  listarEventos,
   desativarEvento,
+  listarEventos,
 } from '../../services/eventService'
-
+import Toast from '../../components/ui/Toast'
 import EventoTable from './EventoTable'
+import {EventoConfirmacaoModal, EventoVisualizacaoModal,} from './EventoModals'
 import './Eventos.css'
 
 const FORMULARIO_INICIAL = {
@@ -25,10 +26,22 @@ const FORMULARIO_INICIAL = {
   version: null,
 }
 
+const FILTROS_INICIAIS = {
+  name: '',
+  status: '',
+  active: 'true',
+}
+
 function Eventos() {
   const [modalAberto, setModalAberto] = useState(false)
   const [modoEdicao, setModoEdicao] = useState(false)
   const [eventoEmEdicaoId, setEventoEmEdicaoId] =
+    useState(null)
+
+  const [eventoVisualizado, setEventoVisualizado] =
+    useState(null)
+
+  const [eventoParaDesativar, setEventoParaDesativar] =
     useState(null)
 
   const [eventos, setEventos] = useState([])
@@ -36,17 +49,25 @@ function Eventos() {
   const [carregandoEvento, setCarregandoEvento] =
     useState(false)
   const [salvando, setSalvando] = useState(false)
+  const [desativando, setDesativando] = useState(false)
 
   const [erro, setErro] = useState('')
   const [erroFormulario, setErroFormulario] =
     useState('')
+  const [erroDesativacao, setErroDesativacao] =
+    useState('')
   const [mensagemSucesso, setMensagemSucesso] =
     useState('')
 
-  const [busca, setBusca] = useState('')
+  const [filtros, setFiltros] = useState(
+    FILTROS_INICIAIS,
+  )
+
+  const [filtrosAplicados, setFiltrosAplicados] =
+    useState(FILTROS_INICIAIS)
+
   const [pagina, setPagina] = useState(0)
-  const [totalPaginas, setTotalPaginas] =
-    useState(0)
+  const [totalPaginas, setTotalPaginas] = useState(0)
   const [totalElementos, setTotalElementos] =
     useState(0)
 
@@ -54,7 +75,35 @@ function Eventos() {
     FORMULARIO_INICIAL,
   )
 
-  async function carregarEventos(nomeBusca = busca) {
+  const resumo = useMemo(() => {
+    return eventos.reduce(
+      (acumulador, evento) => {
+        acumulador.totalPagina += 1
+
+        if (evento.status === 'PLANNING') {
+          acumulador.planejamento += 1
+        }
+
+        if (evento.status === 'PUBLISHED') {
+          acumulador.publicados += 1
+        }
+
+        if (evento.status === 'IN_PROGRESS') {
+          acumulador.emAndamento += 1
+        }
+
+        return acumulador
+      },
+      {
+        totalPagina: 0,
+        planejamento: 0,
+        publicados: 0,
+        emAndamento: 0,
+      },
+    )
+  }, [eventos])
+
+  async function carregarEventos() {
     setCarregando(true)
     setErro('')
 
@@ -63,7 +112,14 @@ function Eventos() {
         page: pagina,
         size: 10,
         sort: 'startDate,asc',
-        name: nomeBusca.trim() || undefined,
+        name:
+          filtrosAplicados.name.trim() || undefined,
+        status:
+          filtrosAplicados.status || undefined,
+        active:
+          filtrosAplicados.active === ''
+            ? undefined
+            : filtrosAplicados.active,
       })
 
       setEventos(resposta.content || [])
@@ -81,7 +137,40 @@ function Eventos() {
 
   useEffect(() => {
     carregarEventos()
-  }, [pagina])
+  }, [pagina, filtrosAplicados])
+
+  function exibirMensagemSucesso(mensagem) {
+    setMensagemSucesso(mensagem)
+
+    window.setTimeout(() => {
+      setMensagemSucesso('')
+    }, 4000)
+  }
+
+  function handleFiltroChange(event) {
+    const { name, value } = event.target
+
+    setFiltros((filtrosAtuais) => ({
+      ...filtrosAtuais,
+      [name]: value,
+    }))
+  }
+
+  function handleAplicarFiltros() {
+    setPagina(0)
+
+    setFiltrosAplicados({
+      name: filtros.name.trim(),
+      status: filtros.status,
+      active: filtros.active,
+    })
+  }
+
+  function handleLimparFiltros() {
+    setPagina(0)
+    setFiltros(FILTROS_INICIAIS)
+    setFiltrosAplicados(FILTROS_INICIAIS)
+  }
 
   function handleChange(event) {
     const { name, value } = event.target
@@ -101,24 +190,28 @@ function Eventos() {
   }
 
   async function handleEditar(evento) {
+    setErro('')
     setErroFormulario('')
     setCarregandoEvento(true)
 
     try {
-      const eventoCompleto = await buscarEventoPorId(
-        evento.id,
-      )
+      const eventoCompleto =
+        await buscarEventoPorId(evento.id)
 
       setFormulario({
         name: eventoCompleto.name || '',
-        description: eventoCompleto.description || '',
+        description:
+          eventoCompleto.description || '',
         city: eventoCompleto.city || '',
         state: eventoCompleto.state || '',
-        venueName: eventoCompleto.venueName || '',
+        venueName:
+          eventoCompleto.venueName || '',
         address: eventoCompleto.address || '',
-        startDate: eventoCompleto.startDate || '',
+        startDate:
+          eventoCompleto.startDate || '',
         endDate: eventoCompleto.endDate || '',
-        status: eventoCompleto.status || 'DRAFT',
+        status:
+          eventoCompleto.status || 'DRAFT',
         pagTicketsUrl:
           eventoCompleto.pagTicketsUrl || '',
         version: eventoCompleto.version,
@@ -134,6 +227,71 @@ function Eventos() {
       )
     } finally {
       setCarregandoEvento(false)
+    }
+  }
+
+  async function handleVisualizar(evento) {
+    setErro('')
+    setCarregandoEvento(true)
+
+    try {
+      const eventoCompleto =
+        await buscarEventoPorId(evento.id)
+
+      setEventoVisualizado(eventoCompleto)
+    } catch (error) {
+      setErro(
+        error.message ||
+          'Não foi possível carregar os detalhes do evento.',
+      )
+    } finally {
+      setCarregandoEvento(false)
+    }
+  }
+
+  function fecharVisualizacao() {
+    setEventoVisualizado(null)
+  }
+
+  function solicitarDesativacao(evento) {
+    setErroDesativacao('')
+    setEventoParaDesativar(evento)
+  }
+
+  function cancelarDesativacao() {
+    if (desativando) {
+      return
+    }
+
+    setEventoParaDesativar(null)
+    setErroDesativacao('')
+  }
+
+  async function confirmarDesativacao() {
+    if (!eventoParaDesativar) {
+      return
+    }
+
+    setDesativando(true)
+    setErroDesativacao('')
+    setErro('')
+
+    try {
+      await desativarEvento(eventoParaDesativar.id)
+
+      setEventoParaDesativar(null)
+      exibirMensagemSucesso(
+        'Evento desativado com sucesso.',
+      )
+
+      await carregarEventos()
+    } catch (error) {
+      setErroDesativacao(
+        error.message ||
+          'Não foi possível desativar o evento.',
+      )
+    } finally {
+      setDesativando(false)
     }
   }
 
@@ -190,11 +348,13 @@ function Eventos() {
         formulario.description.trim() || null,
       city: formulario.city.trim() || null,
       state:
-        formulario.state.trim().toUpperCase() ||
-        null,
+        formulario.state
+          .trim()
+          .toUpperCase() || null,
       venueName:
         formulario.venueName.trim() || null,
-      address: formulario.address.trim() || null,
+      address:
+        formulario.address.trim() || null,
       startDate: formulario.startDate,
       endDate: formulario.endDate,
       status: formulario.status,
@@ -215,7 +375,8 @@ function Eventos() {
   async function handleSubmit(event) {
     event.preventDefault()
 
-    const mensagemValidacao = validarFormulario()
+    const mensagemValidacao =
+      validarFormulario()
 
     if (mensagemValidacao) {
       setErroFormulario(mensagemValidacao)
@@ -227,8 +388,9 @@ function Eventos() {
 
     try {
       const dados = montarDadosDoFormulario()
+      const eraEdicao = modoEdicao
 
-      if (modoEdicao) {
+      if (eraEdicao) {
         await atualizarEvento(
           eventoEmEdicaoId,
           dados,
@@ -237,19 +399,18 @@ function Eventos() {
         await criarEvento(dados)
       }
 
-      fecharModal()
+      setModalAberto(false)
+      setModoEdicao(false)
+      setEventoEmEdicaoId(null)
+      setFormulario(FORMULARIO_INICIAL)
 
-      setMensagemSucesso(
-        modoEdicao
+      exibirMensagemSucesso(
+        eraEdicao
           ? 'Evento atualizado com sucesso.'
           : 'Evento cadastrado com sucesso.',
       )
 
       await carregarEventos()
-
-      window.setTimeout(() => {
-        setMensagemSucesso('')
-      }, 4000)
     } catch (error) {
       setErroFormulario(
         error.message ||
@@ -259,62 +420,6 @@ function Eventos() {
       )
     } finally {
       setSalvando(false)
-    }
-  }
-
-  function handleBuscar() {
-    if (pagina !== 0) {
-      setPagina(0)
-      return
-    }
-
-    carregarEventos()
-  }
-
-  function handleLimparBusca() {
-    setBusca('')
-
-    if (pagina !== 0) {
-      setPagina(0)
-      return
-    }
-
-    carregarEventos('')
-  }
-
-  function handleVisualizar(evento) {
-    console.log('Visualizar evento:', evento)
-  }
-
-  async function handleDesativar(evento) {
-    const confirmou = window.confirm(
-      `Tem certeza que deseja desativar o evento "${evento.name}"?`,
-    )
-
-    if (!confirmou) {
-      return
-    }
-
-    setErro('')
-    setMensagemSucesso('')
-
-    try {
-      await desativarEvento(evento.id)
-
-      setMensagemSucesso(
-        'Evento desativado com sucesso.',
-      )
-
-      await carregarEventos()
-
-      window.setTimeout(() => {
-        setMensagemSucesso('')
-      }, 4000)
-    } catch (error) {
-      setErro(
-        error.message ||
-          'Não foi possível desativar o evento.',
-      )
     }
   }
 
@@ -346,11 +451,131 @@ function Eventos() {
         </button>
       </div>
 
-      {mensagemSucesso && (
-        <div className="eventos-success">
-          {mensagemSucesso}
+      <Toast
+        tipo="success"
+        mensagem={mensagemSucesso}
+        visivel={Boolean(mensagemSucesso)}
+      />
+
+
+      <section className="eventos-summary-grid">
+        <article className="eventos-summary-card">
+          <span>Total encontrado</span>
+          <strong>{totalElementos}</strong>
+          <small>Com os filtros aplicados</small>
+        </article>
+
+        <article className="eventos-summary-card">
+          <span>Nesta página</span>
+          <strong>{resumo.totalPagina}</strong>
+          <small>Máximo de 10 registros</small>
+        </article>
+
+        <article className="eventos-summary-card">
+          <span>Planejamento</span>
+          <strong>{resumo.planejamento}</strong>
+          <small>Nesta página</small>
+        </article>
+
+        <article className="eventos-summary-card">
+          <span>Publicados / andamento</span>
+
+          <strong>
+            {resumo.publicados + resumo.emAndamento}
+          </strong>
+
+          <small>Nesta página</small>
+        </article>
+      </section>
+
+      <section className="eventos-filters">
+        <div className="eventos-filter-field eventos-filter-search">
+          <label htmlFor="eventNameFilter">
+            Buscar evento
+          </label>
+
+          <input
+            id="eventNameFilter"
+            name="name"
+            type="search"
+            placeholder="Digite o nome do evento"
+            value={filtros.name}
+            onChange={handleFiltroChange}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                handleAplicarFiltros()
+              }
+            }}
+          />
         </div>
-      )}
+
+        <div className="eventos-filter-field">
+          <label htmlFor="eventStatusFilter">
+            Status
+          </label>
+
+          <select
+            id="eventStatusFilter"
+            name="status"
+            value={filtros.status}
+            onChange={handleFiltroChange}
+          >
+            <option value="">Todos</option>
+            <option value="DRAFT">
+              Rascunho
+            </option>
+            <option value="PLANNING">
+              Planejamento
+            </option>
+            <option value="PUBLISHED">
+              Publicado
+            </option>
+            <option value="IN_PROGRESS">
+              Em andamento
+            </option>
+            <option value="FINISHED">
+              Encerrado
+            </option>
+            <option value="CANCELLED">
+              Cancelado
+            </option>
+          </select>
+        </div>
+
+        <div className="eventos-filter-field">
+          <label htmlFor="eventActiveFilter">
+            Situação
+          </label>
+
+          <select
+            id="eventActiveFilter"
+            name="active"
+            value={filtros.active}
+            onChange={handleFiltroChange}
+          >
+            <option value="true">Ativos</option>
+            <option value="false">Inativos</option>
+          </select>
+        </div>
+
+        <div className="eventos-filter-actions">
+          <button
+            type="button"
+            className="eventos-filter-clear"
+            onClick={handleLimparFiltros}
+          >
+            Limpar
+          </button>
+
+          <button
+            type="button"
+            className="eventos-filter-apply"
+            onClick={handleAplicarFiltros}
+          >
+            Aplicar filtros
+          </button>
+        </div>
+      </section>
 
       <section className="eventos-card">
         <div className="eventos-card-header">
@@ -360,42 +585,9 @@ function Eventos() {
             <span>
               {totalElementos}{' '}
               {totalElementos === 1
-                ? 'evento cadastrado'
-                : 'eventos cadastrados'}
+                ? 'evento encontrado'
+                : 'eventos encontrados'}
             </span>
-          </div>
-
-          <div className="eventos-search">
-            <input
-              type="search"
-              placeholder="Buscar evento..."
-              value={busca}
-              onChange={(event) =>
-                setBusca(event.target.value)
-              }
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') {
-                  handleBuscar()
-                }
-              }}
-            />
-
-            <button
-              type="button"
-              onClick={handleBuscar}
-            >
-              Buscar
-            </button>
-
-            {busca && (
-              <button
-                type="button"
-                className="eventos-search-clear"
-                onClick={handleLimparBusca}
-              >
-                Limpar
-              </button>
-            )}
           </div>
         </div>
 
@@ -405,7 +597,7 @@ function Eventos() {
           erro={erro}
           onEditar={handleEditar}
           onVisualizar={handleVisualizar}
-          onDesativar={handleDesativar}
+          onDesativar={solicitarDesativacao}
         />
 
         {totalPaginas > 1 && (
@@ -646,23 +838,18 @@ function Eventos() {
                   <option value="DRAFT">
                     Rascunho
                   </option>
-
                   <option value="PLANNING">
                     Planejamento
                   </option>
-
                   <option value="PUBLISHED">
                     Publicado
                   </option>
-
                   <option value="IN_PROGRESS">
                     Em andamento
                   </option>
-
                   <option value="FINISHED">
                     Encerrado
                   </option>
-
                   <option value="CANCELLED">
                     Cancelado
                   </option>
@@ -695,6 +882,20 @@ function Eventos() {
           </div>
         </div>
       )}
+
+      <EventoVisualizacaoModal
+        evento={eventoVisualizado}
+        onFechar={fecharVisualizacao}
+      />
+
+      <EventoConfirmacaoModal
+        evento={eventoParaDesativar}
+        erro={erroDesativacao}
+        desativando={desativando}
+        onCancelar={cancelarDesativacao}
+        onConfirmar={confirmarDesativacao}
+      />
+      
     </div>
   )
 }

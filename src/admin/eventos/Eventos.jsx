@@ -5,6 +5,7 @@ import {
   buscarEventoPorId,
   criarEvento,
   listarEventos,
+  desativarEvento,
 } from '../../services/eventService'
 
 import EventoTable from './EventoTable'
@@ -285,8 +286,36 @@ function Eventos() {
     console.log('Visualizar evento:', evento)
   }
 
-  function handleDesativar(evento) {
-    console.log('Desativar evento:', evento)
+  async function handleDesativar(evento) {
+    const confirmou = window.confirm(
+      `Tem certeza que deseja desativar o evento "${evento.name}"?`,
+    )
+
+    if (!confirmou) {
+      return
+    }
+
+    setErro('')
+    setMensagemSucesso('')
+
+    try {
+      await desativarEvento(evento.id)
+
+      setMensagemSucesso(
+        'Evento desativado com sucesso.',
+      )
+
+      await carregarEventos()
+
+      window.setTimeout(() => {
+        setMensagemSucesso('')
+      }, 4000)
+    } catch (error) {
+      setErro(
+        error.message ||
+          'Não foi possível desativar o evento.',
+      )
+    }
   }
 
   return (

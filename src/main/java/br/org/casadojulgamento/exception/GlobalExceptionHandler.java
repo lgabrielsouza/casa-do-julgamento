@@ -9,10 +9,12 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
+import lombok.extern.slf4j.Slf4j;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -140,6 +142,13 @@ public class GlobalExceptionHandler {
             Exception exception,
             HttpServletRequest request
     ) {
+                log.error(
+                "Erro inesperado em {} {}",
+                request.getMethod(),
+                request.getRequestURI(),
+                exception
+        );
+
         HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
 
         ApiError error = createError(

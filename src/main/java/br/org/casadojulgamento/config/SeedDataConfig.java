@@ -9,6 +9,7 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
+import br.org.casadojulgamento.domain.enums.EventStatus;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -28,7 +29,7 @@ public class SeedDataConfig {
                 .description("Evento imersivo e interativo.")
                 .startDate(LocalDate.of(2026, 10, 29))
                 .endDate(LocalDate.of(2026, 11, 14))
-                .status("ACTIVE")
+                .status(EventStatus.PLANNING)
                 .build();
 
             event = eventRepository.save(event);

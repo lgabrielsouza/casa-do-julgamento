@@ -2,5 +2,25 @@ package br.org.casadojulgamento.repository;
 
 import br.org.casadojulgamento.domain.entity.EventSession;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-public interface EventSessionRepository extends JpaRepository<EventSession, Long> {}
+import java.time.LocalDate;
+import java.time.LocalTime;
+
+public interface EventSessionRepository
+        extends JpaRepository<EventSession, Long>,
+                JpaSpecificationExecutor<EventSession> {
+
+    boolean existsByEventIdAndDateAndStartTimeAndActiveTrue(
+            Long eventId,
+            LocalDate date,
+            LocalTime startTime
+    );
+
+    boolean existsByEventIdAndDateAndStartTimeAndActiveTrueAndIdNot(
+            Long eventId,
+            LocalDate date,
+            LocalTime startTime,
+            Long id
+    );
+}

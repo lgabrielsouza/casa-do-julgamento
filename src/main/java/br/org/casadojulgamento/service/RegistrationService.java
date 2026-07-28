@@ -3,6 +3,7 @@ package br.org.casadojulgamento.service;
 import br.org.casadojulgamento.api.dto.CreateRegistrationRequest;
 import br.org.casadojulgamento.api.dto.RegistrationResponse;
 import br.org.casadojulgamento.domain.entity.*;
+import br.org.casadojulgamento.domain.enums.EventSessionStatus;
 import br.org.casadojulgamento.domain.enums.RegistrationStatus;
 import br.org.casadojulgamento.domain.enums.RegistrationType;
 import br.org.casadojulgamento.exception.BusinessException;
@@ -35,7 +36,7 @@ public class RegistrationService {
             throw new BusinessException("A sessão informada não pertence ao evento selecionado.");
         }
 
-        if (!session.isRegistrationOpen()) {
+        if (session.getStatus() != EventSessionStatus.OPEN) {
             throw new BusinessException("As inscrições para esta sessão estão fechadas.");
         }
 

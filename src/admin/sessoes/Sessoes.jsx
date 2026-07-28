@@ -27,7 +27,7 @@ const STATUS_CONFIG = {
   },
   OPEN: {
     label: 'Aberta',
-    className: 'disponivel',
+    className: 'aberta',
   },
   CLOSED: {
     label: 'Encerrada',
@@ -35,9 +35,19 @@ const STATUS_CONFIG = {
   },
   CANCELLED: {
     label: 'Cancelada',
-    className: 'lotada',
+    className: 'cancelada',
   },
 }
+
+const DIAS_SEMANA = [
+  'Dom',
+  'Seg',
+  'Ter',
+  'Qua',
+  'Qui',
+  'Sex',
+  'Sáb',
+]
 
 function converterDataLocal(dataIso) {
   if (!dataIso) {
@@ -51,14 +61,43 @@ function converterDataLocal(dataIso) {
   return new Date(ano, mes - 1, dia)
 }
 
-function formatarData(dataIso) {
+function formatarDataCurta(dataIso) {
   const data = converterDataLocal(dataIso)
 
   if (!data) {
     return '—'
   }
 
-  return new Intl.DateTimeFormat('pt-BR').format(data)
+  return new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+  }).format(data)
+}
+
+function formatarDataCompleta(dataIso) {
+  const data = converterDataLocal(dataIso)
+
+  if (!data) {
+    return 'Nenhuma data selecionada'
+  }
+
+  const dataFormatada =
+    new Intl.DateTimeFormat('pt-BR', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+    }).format(data)
+
+  const diaSemana =
+    new Intl.DateTimeFormat('pt-BR', {
+      weekday: 'long',
+    }).format(data)
+
+  const diaSemanaFormatado =
+    diaSemana.charAt(0).toUpperCase() +
+    diaSemana.slice(1)
+
+  return `${dataFormatada} (${diaSemanaFormatado})`
 }
 
 function formatarHorario(horario) {
@@ -71,12 +110,24 @@ function formatarHorario(horario) {
 
 function formatarPeriodo(evento) {
   if (!evento?.startDate || !evento?.endDate) {
+    return 'Período não informado'
+  }
+
+  return `${formatarDataCurta(
+    evento.startDate,
+  )}/${evento.startDate.slice(0, 4)} — ${formatarDataCurta(
+    evento.endDate,
+  )}/${evento.endDate.slice(0, 4)}`
+}
+
+function obterDiaSemana(dataIso) {
+  const data = converterDataLocal(dataIso)
+
+  if (!data) {
     return ''
   }
 
-  return `${formatarData(evento.startDate)} a ${formatarData(
-    evento.endDate,
-  )}`
+  return DIAS_SEMANA[data.getDay()]
 }
 
 function gerarDatasDoEvento(dataInicial, dataFinal) {
@@ -107,14 +158,33 @@ function gerarDatasDoEvento(dataInicial, dataFinal) {
   return datas
 }
 
+function ordenarSessoes(lista) {
+  return [...lista].sort((sessaoA, sessaoB) => {
+    const comparacaoData =
+      sessaoA.date.localeCompare(sessaoB.date)
+
+    if (comparacaoData !== 0) {
+      return comparacaoData
+    }
+
+    return sessaoA.startTime.localeCompare(
+      sessaoB.startTime,
+    )
+  })
+}
+
 function Sessoes() {
   const [eventos, setEventos] = useState([])
-  const [eventoSelecionadoId, setEventoSelecionadoId] =
-    useState('')
+  const [
+    eventoSelecionadoId,
+    setEventoSelecionadoId,
+  ] = useState('')
 
   const [sessoes, setSessoes] = useState([])
-  const [dataSelecionada, setDataSelecionada] =
-    useState('')
+  const [
+    dataSelecionada,
+    setDataSelecionada,
+  ] = useState('')
 
   const [modalAberto, setModalAberto] =
     useState(false)
@@ -123,19 +193,29 @@ function Sessoes() {
     FORMULARIO_INICIAL,
   )
 
-  const [carregandoEventos, setCarregandoEventos] =
-    useState(true)
+  const [
+    carregandoEventos,
+    setCarregandoEventos,
+  ] = useState(true)
 
-  const [carregandoSessoes, setCarregandoSessoes] =
+  const [
+    carregandoSessoes,
+    setCarregandoSessoes,
+  ] = useState(false)
+
+  const [salvando, setSalvando] =
     useState(false)
 
-  const [salvando, setSalvando] = useState(false)
   const [erro, setErro] = useState('')
-  const [erroFormulario, setErroFormulario] =
-    useState('')
+  const [
+    erroFormulario,
+    setErroFormulario,
+  ] = useState('')
 
-  const [mensagemSucesso, setMensagemSucesso] =
-    useState('')
+  const [
+    mensagemSucesso,
+    setMensagemSucesso,
+  ] = useState('')
 
   const eventoSelecionado = useMemo(
     () =>
@@ -159,7 +239,7 @@ function Sessoes() {
     ],
   )
 
-  const sessoesFiltradas = useMemo(
+  const sessoesDoDia = useMemo(
     () =>
       sessoes
         .filter(
@@ -173,6 +253,42 @@ function Sessoes() {
         ),
     [sessoes, dataSelecionada],
   )
+
+  const resumoDoDia = useMemo(() => {
+    return sessoesDoDia.reduce(
+      (resumo, sessao) => {
+        resumo.total += 1
+        resumo.capacidade +=
+          Number(sessao.capacity) || 0
+
+        if (sessao.status === 'PLANNED') {
+          resumo.planejadas += 1
+        }
+
+        if (sessao.status === 'OPEN') {
+          resumo.abertas += 1
+        }
+
+        if (sessao.status === 'CLOSED') {
+          resumo.encerradas += 1
+        }
+
+        if (sessao.status === 'CANCELLED') {
+          resumo.canceladas += 1
+        }
+
+        return resumo
+      },
+      {
+        total: 0,
+        capacidade: 0,
+        planejadas: 0,
+        abertas: 0,
+        encerradas: 0,
+        canceladas: 0,
+      },
+    )
+  }, [sessoesDoDia])
 
   useEffect(() => {
     carregarEventos()
@@ -212,6 +328,30 @@ function Sessoes() {
 
     return () => window.clearTimeout(timeout)
   }, [mensagemSucesso])
+
+  useEffect(() => {
+    if (!modalAberto) {
+      return undefined
+    }
+
+    function fecharComEscape(event) {
+      if (event.key === 'Escape' && !salvando) {
+        fecharModal()
+      }
+    }
+
+    document.addEventListener(
+      'keydown',
+      fecharComEscape,
+    )
+
+    return () => {
+      document.removeEventListener(
+        'keydown',
+        fecharComEscape,
+      )
+    }
+  }, [modalAberto, salvando])
 
   async function carregarEventos() {
     setCarregandoEventos(true)
@@ -260,7 +400,9 @@ function Sessoes() {
         sort: ['date,asc', 'startTime,asc'],
       })
 
-      setSessoes(resposta.content || [])
+      setSessoes(
+        ordenarSessoes(resposta.content || []),
+      )
     } catch (error) {
       setSessoes([])
 
@@ -278,7 +420,7 @@ function Sessoes() {
     setDataSelecionada('')
   }
 
-  function abrirModal() {
+  function abrirModalNovaSessao() {
     if (!eventoSelecionado) {
       setErro(
         'Selecione um evento antes de cadastrar uma sessão.',
@@ -316,6 +458,31 @@ function Sessoes() {
       ...formularioAtual,
       [name]: value,
     }))
+  }
+
+  function selecionarDataAnterior() {
+    const indiceAtual =
+      datasDoEvento.indexOf(dataSelecionada)
+
+    if (indiceAtual > 0) {
+      setDataSelecionada(
+        datasDoEvento[indiceAtual - 1],
+      )
+    }
+  }
+
+  function selecionarProximaData() {
+    const indiceAtual =
+      datasDoEvento.indexOf(dataSelecionada)
+
+    if (
+      indiceAtual >= 0 &&
+      indiceAtual < datasDoEvento.length - 1
+    ) {
+      setDataSelecionada(
+        datasDoEvento[indiceAtual + 1],
+      )
+    }
   }
 
   async function salvarSessao(event) {
@@ -367,30 +534,20 @@ function Sessoes() {
       })
 
       setSessoes((sessoesAtuais) =>
-        [...sessoesAtuais, novaSessao].sort(
-          (sessaoA, sessaoB) => {
-            const comparacaoData =
-              sessaoA.date.localeCompare(
-                sessaoB.date,
-              )
-
-            if (comparacaoData !== 0) {
-              return comparacaoData
-            }
-
-            return sessaoA.startTime.localeCompare(
-              sessaoB.startTime,
-            )
-          },
-        ),
+        ordenarSessoes([
+          ...sessoesAtuais,
+          novaSessao,
+        ]),
       )
 
       setDataSelecionada(novaSessao.date)
+
       setMensagemSucesso(
         'Sessão cadastrada com sucesso.',
       )
 
-      fecharModal()
+      setModalAberto(false)
+      setFormulario(FORMULARIO_INICIAL)
     } catch (error) {
       setErroFormulario(
         error.message ||
@@ -409,273 +566,470 @@ function Sessoes() {
         visivel={Boolean(mensagemSucesso)}
       />
 
-      <div className="sessoes-heading">
+      <header className="sessoes-topbar">
         <div>
-          <p className="sessoes-eyebrow">
-            Programação
-          </p>
-
           <h1>Sessões</h1>
 
           <p>
-            Gerencie as datas, os horários e as
-            capacidades das sessões.
+            Gerencie as sessões do evento de forma
+            rápida e visual.
           </p>
         </div>
 
-        <button
-          type="button"
-          className="nova-sessao-button"
-          onClick={abrirModal}
-          disabled={
-            carregandoEventos ||
-            !eventoSelecionado
-          }
-        >
-          + Nova sessão
-        </button>
-      </div>
+        <div className="sessoes-topbar-actions">
+          <button
+            type="button"
+            className="gerar-sessoes-button"
+            disabled={!eventoSelecionado}
+            title="A geração automática será implementada na próxima etapa."
+          >
+            <span aria-hidden="true">↻</span>
+            Gerar sessões
+          </button>
+
+          <button
+            type="button"
+            className="nova-sessao-button"
+            onClick={abrirModalNovaSessao}
+            disabled={
+              carregandoEventos ||
+              !eventoSelecionado
+            }
+          >
+            <span aria-hidden="true">＋</span>
+            Nova sessão
+          </button>
+        </div>
+      </header>
 
       {erro && (
         <div
+          className="sessoes-alert"
           role="alert"
-          style={{
-            marginBottom: '20px',
-            padding: '13px 15px',
-            border: '1px solid #f1caca',
-            borderRadius: '8px',
-            background: '#fff4f4',
-            color: '#a50000',
-            fontSize: '12px',
-            fontWeight: 700,
-          }}
         >
           {erro}
         </div>
       )}
 
-      <section className="sessoes-evento">
-        <div>
-          <span>Evento selecionado</span>
+      <section className="sessoes-filtros">
+        <div className="sessoes-filtro-group">
+          <label htmlFor="eventoSelecionado">
+            Evento
+          </label>
 
-          <strong>
-            {carregandoEventos
-              ? 'Carregando eventos...'
-              : eventoSelecionado?.name ||
-                'Nenhum evento disponível'}
-          </strong>
-
-          {eventoSelecionado && (
-            <small
-              style={{
-                marginTop: '4px',
-                color: '#929292',
-                fontSize: '10px',
-              }}
-            >
-              {formatarPeriodo(
-                eventoSelecionado,
-              )}
-            </small>
-          )}
-        </div>
-
-        <select
-          value={eventoSelecionadoId}
-          onChange={selecionarEvento}
-          disabled={
-            carregandoEventos ||
-            eventos.length === 0
-          }
-        >
-          {eventos.length === 0 ? (
-            <option value="">
-              Nenhum evento disponível
-            </option>
-          ) : (
-            eventos.map((evento) => (
-              <option
-                key={evento.id}
-                value={evento.id}
-              >
-                {evento.name}
+          <select
+            id="eventoSelecionado"
+            value={eventoSelecionadoId}
+            onChange={selecionarEvento}
+            disabled={
+              carregandoEventos ||
+              eventos.length === 0
+            }
+          >
+            {eventos.length === 0 ? (
+              <option value="">
+                Nenhum evento disponível
               </option>
-            ))
-          )}
-        </select>
-      </section>
-
-      <section className="sessoes-datas">
-        <div className="sessoes-datas-header">
-          <div>
-            <h2>Datas do evento</h2>
-
-            <p>
-              Selecione uma data para visualizar
-              as sessões programadas.
-            </p>
-          </div>
+            ) : (
+              eventos.map((evento) => (
+                <option
+                  key={evento.id}
+                  value={evento.id}
+                >
+                  {evento.name}
+                </option>
+              ))
+            )}
+          </select>
         </div>
 
-        <div className="datas-list">
-          {datasDoEvento.length > 0 ? (
-            datasDoEvento.map((data) => (
-              <button
-                type="button"
-                key={data}
-                className={
-                  dataSelecionada === data
-                    ? 'data-button active'
-                    : 'data-button'
-                }
-                onClick={() =>
-                  setDataSelecionada(data)
-                }
-              >
-                {formatarData(data)}
-              </button>
-            ))
-          ) : (
-            <span
-              style={{
-                color: '#888888',
-                fontSize: '12px',
-              }}
-            >
-              Selecione um evento para visualizar
-              as datas.
-            </span>
-          )}
+        <div className="sessoes-filtro-group">
+          <label>Período do evento</label>
+
+          <div className="sessoes-periodo">
+            <span aria-hidden="true">▣</span>
+
+            {eventoSelecionado
+              ? formatarPeriodo(eventoSelecionado)
+              : 'Nenhum evento selecionado'}
+          </div>
         </div>
       </section>
 
-      <section className="sessoes-card">
-        <div className="sessoes-card-header">
-          <div>
-            <h2>Sessões programadas</h2>
+      <nav
+        className="sessoes-date-navigation"
+        aria-label="Datas do evento"
+      >
+        <button
+          type="button"
+          className="sessoes-date-arrow"
+          onClick={selecionarDataAnterior}
+          disabled={
+            datasDoEvento.indexOf(
+              dataSelecionada,
+            ) <= 0
+          }
+          aria-label="Visualizar data anterior"
+        >
+          ‹
+        </button>
 
-            <span>
-              {dataSelecionada
-                ? formatarData(dataSelecionada)
-                : 'Nenhuma data selecionada'}
-            </span>
-          </div>
-
-          <span className="sessoes-total">
-            {sessoesFiltradas.length}{' '}
-            {sessoesFiltradas.length === 1
-              ? 'sessão'
-              : 'sessões'}
-          </span>
-        </div>
-
-        {carregandoSessoes ? (
-          <div className="sessoes-empty">
-            <strong>
-              Carregando sessões...
-            </strong>
-
-            <p>
-              Aguarde enquanto buscamos a
-              programação do evento.
-            </p>
-          </div>
-        ) : sessoesFiltradas.length > 0 ? (
-          <div className="sessoes-table-wrapper">
-            <table className="sessoes-table">
-              <thead>
-                <tr>
-                  <th>Horário</th>
-                  <th>Data</th>
-                  <th>Capacidade</th>
-                  <th>Status</th>
-                  <th>Ações</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {sessoesFiltradas.map(
-                  (sessao) => {
-                    const status =
-                      STATUS_CONFIG[
-                        sessao.status
-                      ] || {
-                        label:
-                          sessao.status ||
-                          'Não definido',
-                        className: '',
-                      }
-
-                    return (
-                      <tr key={sessao.id}>
-                        <td>
-                          <strong>
-                            {formatarHorario(
-                              sessao.startTime,
-                            )}
-                          </strong>
-                        </td>
-
-                        <td>
-                          {formatarData(
-                            sessao.date,
-                          )}
-                        </td>
-
-                        <td>
-                          {sessao.capacity}{' '}
-                          pessoas
-                        </td>
-
-                        <td>
-                          <span
-                            className={`sessao-status ${status.className}`}
-                          >
-                            {status.label}
-                          </span>
-                        </td>
-
-                        <td>
-                          <button
-                            type="button"
-                            className="sessao-action"
-                          >
-                            Gerenciar
-                          </button>
-                        </td>
-                      </tr>
-                    )
-                  },
-                )}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="sessoes-empty">
-            <strong>
-              Nenhuma sessão cadastrada
-            </strong>
-
-            <p>
-              Ainda não existem sessões para{' '}
-              {dataSelecionada
-                ? formatarData(
-                    dataSelecionada,
-                  )
-                : 'esta data'}
-              .
-            </p>
-
+        <div className="sessoes-date-list">
+          {datasDoEvento.map((data) => (
             <button
               type="button"
-              onClick={abrirModal}
-              disabled={!eventoSelecionado}
+              key={data}
+              className={
+                dataSelecionada === data
+                  ? 'sessoes-date-item active'
+                  : 'sessoes-date-item'
+              }
+              onClick={() =>
+                setDataSelecionada(data)
+              }
             >
-              + Criar sessão
+              <strong>
+                {formatarDataCurta(data)}
+              </strong>
+
+              <span>{obterDiaSemana(data)}</span>
             </button>
+          ))}
+        </div>
+
+        <button
+          type="button"
+          className="sessoes-date-arrow"
+          onClick={selecionarProximaData}
+          disabled={
+            datasDoEvento.indexOf(
+              dataSelecionada,
+            ) ===
+            datasDoEvento.length - 1
+          }
+          aria-label="Visualizar próxima data"
+        >
+          ›
+        </button>
+      </nav>
+
+      <div className="sessoes-content-grid">
+        <main className="sessoes-main-content">
+          <div className="sessoes-day-header">
+            <div>
+              <span
+                className="sessoes-day-icon"
+                aria-hidden="true"
+              >
+                ▣
+              </span>
+
+              <h2>
+                {formatarDataCompleta(
+                  dataSelecionada,
+                )}
+              </h2>
+            </div>
+
+            <span>
+              {resumoDoDia.total}{' '}
+              {resumoDoDia.total === 1
+                ? 'sessão'
+                : 'sessões'}
+            </span>
           </div>
-        )}
-      </section>
+
+          {carregandoSessoes ? (
+            <div className="sessoes-empty-state">
+              <strong>
+                Carregando sessões...
+              </strong>
+
+              <p>
+                Aguarde enquanto buscamos a
+                programação do evento.
+              </p>
+            </div>
+          ) : sessoesDoDia.length === 0 ? (
+            <div className="sessoes-empty-state">
+              <span
+                className="sessoes-empty-icon"
+                aria-hidden="true"
+              >
+                ◷
+              </span>
+
+              <strong>
+                Nenhuma sessão cadastrada
+              </strong>
+
+              <p>
+                Ainda não existem sessões para esta
+                data.
+              </p>
+
+              <button
+                type="button"
+                onClick={abrirModalNovaSessao}
+                disabled={!eventoSelecionado}
+              >
+                ＋ Criar sessão
+              </button>
+            </div>
+          ) : (
+            <div className="sessoes-timeline">
+              {sessoesDoDia.map((sessao) => {
+                const configuracaoStatus =
+                  STATUS_CONFIG[sessao.status] || {
+                    label:
+                      sessao.status ||
+                      'Não definido',
+                    className: 'planejada',
+                  }
+
+                return (
+                  <article
+                    className={`sessoes-timeline-item ${configuracaoStatus.className}`}
+                    key={sessao.id}
+                  >
+                    <div
+                      className="sessoes-timeline-marker"
+                      aria-hidden="true"
+                    />
+
+                    <div className="sessoes-session-card">
+                      <div className="sessoes-session-time">
+                        {formatarHorario(
+                          sessao.startTime,
+                        )}
+                      </div>
+
+                      <span
+                        className={`sessoes-session-status ${configuracaoStatus.className}`}
+                      >
+                        {configuracaoStatus.label}
+                      </span>
+
+                      <div className="sessoes-session-capacity">
+                        <strong>
+                          {sessao.capacity}{' '}
+                          {sessao.capacity === 1
+                            ? 'vaga'
+                            : 'vagas'}
+                        </strong>
+
+                        <span>
+                          Capacidade da sessão
+                        </span>
+                      </div>
+
+                      <div className="sessoes-session-actions">
+                        <button
+                          type="button"
+                          aria-label={`Visualizar sessão das ${formatarHorario(
+                            sessao.startTime,
+                          )}`}
+                          title="Visualizar"
+                          disabled
+                        >
+                          ◉
+                        </button>
+
+                        <button
+                          type="button"
+                          aria-label={`Editar sessão das ${formatarHorario(
+                            sessao.startTime,
+                          )}`}
+                          title="Editar"
+                          disabled
+                        >
+                          ✎
+                        </button>
+
+                        <button
+                          type="button"
+                          aria-label={`Mais ações da sessão das ${formatarHorario(
+                            sessao.startTime,
+                          )}`}
+                          title="Mais ações"
+                          disabled
+                        >
+                          •••
+                        </button>
+                      </div>
+                    </div>
+                  </article>
+                )
+              })}
+            </div>
+          )}
+        </main>
+
+        <aside className="sessoes-sidebar">
+          <section className="sessoes-sidebar-card">
+            <h2>Resumo do dia</h2>
+
+            <div className="sessoes-summary-grid">
+              <div className="sessoes-summary-item total">
+                <span aria-hidden="true">▣</span>
+
+                <div>
+                  <small>Sessões no dia</small>
+                  <strong>
+                    {resumoDoDia.total}
+                  </strong>
+                </div>
+              </div>
+
+              <div className="sessoes-summary-item capacidade">
+                <span aria-hidden="true">♙</span>
+
+                <div>
+                  <small>
+                    Capacidade total
+                  </small>
+
+                  <strong>
+                    {resumoDoDia.capacidade}
+                  </strong>
+                </div>
+              </div>
+
+              <div className="sessoes-summary-item planejadas">
+                <span aria-hidden="true">◷</span>
+
+                <div>
+                  <small>Planejadas</small>
+                  <strong>
+                    {resumoDoDia.planejadas}
+                  </strong>
+                </div>
+              </div>
+
+              <div className="sessoes-summary-item abertas">
+                <span aria-hidden="true">✓</span>
+
+                <div>
+                  <small>Abertas</small>
+                  <strong>
+                    {resumoDoDia.abertas}
+                  </strong>
+                </div>
+              </div>
+
+              <div className="sessoes-summary-item encerradas">
+                <span aria-hidden="true">▣</span>
+
+                <div>
+                  <small>Encerradas</small>
+                  <strong>
+                    {resumoDoDia.encerradas}
+                  </strong>
+                </div>
+              </div>
+
+              <div className="sessoes-summary-item canceladas">
+                <span aria-hidden="true">×</span>
+
+                <div>
+                  <small>Canceladas</small>
+                  <strong>
+                    {resumoDoDia.canceladas}
+                  </strong>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section className="sessoes-sidebar-card">
+            <h2>Ações rápidas</h2>
+
+            <div className="sessoes-quick-actions">
+              <button
+                type="button"
+                disabled
+                title="Disponível na próxima etapa."
+              >
+                <span aria-hidden="true">▣</span>
+
+                <strong>
+                  Gerar sessões para este dia
+                </strong>
+
+                <span aria-hidden="true">›</span>
+              </button>
+
+              <button
+                type="button"
+                disabled
+                title="Disponível em uma etapa futura."
+              >
+                <span aria-hidden="true">▢</span>
+
+                <strong>
+                  Copiar sessões de outro dia
+                </strong>
+
+                <span aria-hidden="true">›</span>
+              </button>
+
+              <button
+                type="button"
+                disabled
+                title="Disponível em uma etapa futura."
+              >
+                <span aria-hidden="true">↓</span>
+
+                <strong>
+                  Exportar lista do dia
+                </strong>
+
+                <span aria-hidden="true">›</span>
+              </button>
+
+              <button
+                type="button"
+                disabled
+                title="Disponível em uma etapa futura."
+              >
+                <span aria-hidden="true">▤</span>
+
+                <strong>
+                  Imprimir lista do dia
+                </strong>
+
+                <span aria-hidden="true">›</span>
+              </button>
+            </div>
+          </section>
+
+          <section className="sessoes-sidebar-card">
+            <h2>Legenda de status</h2>
+
+            <div className="sessoes-status-legend">
+              <div>
+                <span className="planejada" />
+                Planejada
+              </div>
+
+              <div>
+                <span className="aberta" />
+                Aberta
+              </div>
+
+              <div>
+                <span className="encerrada" />
+                Encerrada
+              </div>
+
+              <div>
+                <span className="cancelada" />
+                Cancelada
+              </div>
+            </div>
+          </section>
+        </aside>
+      </div>
 
       {modalAberto && (
         <div
@@ -683,8 +1037,7 @@ function Sessoes() {
           role="presentation"
           onMouseDown={(event) => {
             if (
-              event.target ===
-              event.currentTarget
+              event.target === event.currentTarget
             ) {
               fecharModal()
             }
@@ -734,8 +1087,7 @@ function Sessoes() {
                 >
                   <option
                     value={
-                      eventoSelecionado?.id ||
-                      ''
+                      eventoSelecionado?.id || ''
                     }
                   >
                     {eventoSelecionado?.name ||
@@ -852,16 +1204,8 @@ function Sessoes() {
 
               {erroFormulario && (
                 <p
+                  className="sessao-form-error"
                   role="alert"
-                  style={{
-                    marginBottom: '16px',
-                    padding: '11px 12px',
-                    borderRadius: '7px',
-                    background: '#fff0f0',
-                    color: '#a50000',
-                    fontSize: '11px',
-                    fontWeight: 700,
-                  }}
                 >
                   {erroFormulario}
                 </p>

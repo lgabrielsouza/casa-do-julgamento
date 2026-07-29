@@ -7,7 +7,10 @@ import {
 import Toast from '../../components/ui/Toast'
 import { listarEventos } from '../../services/eventService'
 import {
+  atualizarSessao,
+  buscarSessaoPorId,
   criarSessao,
+  desativarSessao,
   listarSessoes,
 } from '../../services/sessionService'
 
@@ -18,6 +21,7 @@ const FORMULARIO_INICIAL = {
   startTime: '',
   capacity: 25,
   status: 'PLANNED',
+  version: null,
 }
 
 const STATUS_CONFIG = {
@@ -151,7 +155,6 @@ function gerarDatasDoEvento(dataInicial, dataFinal) {
     ).padStart(2, '0')
 
     datas.push(`${ano}-${mes}-${dia}`)
-
     dataAtual.setDate(dataAtual.getDate() + 1)
   }
 
@@ -189,6 +192,19 @@ function Sessoes() {
   const [modalAberto, setModalAberto] =
     useState(false)
 
+  const [modoModal, setModoModal] =
+    useState('create')
+
+  const [
+    sessaoSelecionada,
+    setSessaoSelecionada,
+  ] = useState(null)
+
+  const [
+    confirmarDesativacao,
+    setConfirmarDesativacao,
+  ] = useState(false)
+
   const [formulario, setFormulario] = useState(
     FORMULARIO_INICIAL,
   )
@@ -205,6 +221,16 @@ function Sessoes() {
 
   const [salvando, setSalvando] =
     useState(false)
+
+  const [
+    carregandoDetalhes,
+    setCarregandoDetalhes,
+  ] = useState(false)
+
+  const [
+    processandoAcao,
+    setProcessandoAcao,
+  ] = useState(false)
 
   const [erro, setErro] = useState('')
   const [
@@ -290,6 +316,9 @@ function Sessoes() {
     )
   }, [sessoesDoDia])
 
+  const somenteLeitura =
+    modoModal === 'view'
+
   useEffect(() => {
     carregarEventos()
   }, [])
@@ -330,13 +359,17 @@ function Sessoes() {
   }, [mensagemSucesso])
 
   useEffect(() => {
-    if (!modalAberto) {
+    if (!modalAberto && !confirmarDesativacao) {
       return undefined
     }
 
     function fecharComEscape(event) {
-      if (event.key === 'Escape' && !salvando) {
-        fecharModal()
+      if (
+        event.key === 'Escape' &&
+        !salvando &&
+        !processandoAcao
+      ) {
+        fecharModais()
       }
     }
 
@@ -351,7 +384,12 @@ function Sessoes() {
         fecharComEscape,
       )
     }
-  }, [modalAberto, salvando])
+  }, [
+    modalAberto,
+    confirmarDesativacao,
+    salvando,
+    processandoAcao,
+  ])
 
   async function carregarEventos() {
     setCarregandoEventos(true)
@@ -420,6 +458,18 @@ function Sessoes() {
     setDataSelecionada('')
   }
 
+  function preencherFormulario(sessao) {
+    setFormulario({
+      date: sessao.date,
+      startTime: formatarHorario(
+        sessao.startTime,
+      ),
+      capacity: sessao.capacity,
+      status: sessao.status,
+      version: sessao.version,
+    })
+  }
+
   function abrirModalNovaSessao() {
     if (!eventoSelecionado) {
       setErro(
@@ -428,6 +478,8 @@ function Sessoes() {
       return
     }
 
+    setModoModal('create')
+    setSessaoSelecionada(null)
     setErroFormulario('')
 
     setFormulario({
@@ -441,12 +493,56 @@ function Sessoes() {
     setModalAberto(true)
   }
 
-  function fecharModal() {
-    if (salvando) {
+  async function abrirModalVisualizar(id) {
+    await carregarSessaoParaModal(id, 'view')
+  }
+
+  async function abrirModalEditar(id) {
+    await carregarSessaoParaModal(id, 'edit')
+  }
+
+  async function carregarSessaoParaModal(
+    id,
+    modo,
+  ) {
+    setCarregandoDetalhes(true)
+    setErro('')
+    setErroFormulario('')
+
+    try {
+      const sessao =
+        await buscarSessaoPorId(id)
+
+      setSessaoSelecionada(sessao)
+      preencherFormulario(sessao)
+      setModoModal(modo)
+      setModalAberto(true)
+    } catch (error) {
+      setErro(
+        error.message ||
+          'Não foi possível carregar a sessão.',
+      )
+    } finally {
+      setCarregandoDetalhes(false)
+    }
+  }
+
+  function abrirConfirmacaoDesativacao(
+    sessao,
+  ) {
+    setSessaoSelecionada(sessao)
+    setConfirmarDesativacao(true)
+  }
+
+  function fecharModais() {
+    if (salvando || processandoAcao) {
       return
     }
 
     setModalAberto(false)
+    setConfirmarDesativacao(false)
+    setModoModal('create')
+    setSessaoSelecionada(null)
     setErroFormulario('')
     setFormulario(FORMULARIO_INICIAL)
   }
@@ -485,14 +581,9 @@ function Sessoes() {
     }
   }
 
-  async function salvarSessao(event) {
-    event.preventDefault()
-
+  function validarFormulario() {
     if (!eventoSelecionado) {
-      setErroFormulario(
-        'Selecione um evento válido.',
-      )
-      return
+      return 'Selecione um evento válido.'
     }
 
     if (
@@ -501,10 +592,7 @@ function Sessoes() {
       !formulario.capacity ||
       !formulario.status
     ) {
-      setErroFormulario(
-        'Preencha todos os campos obrigatórios.',
-      )
-      return
+      return 'Preencha todos os campos obrigatórios.'
     }
 
     const capacidade = Number(
@@ -515,47 +603,155 @@ function Sessoes() {
       !Number.isInteger(capacidade) ||
       capacidade < 1
     ) {
-      setErroFormulario(
-        'A capacidade deve ser um número inteiro maior que zero.',
-      )
+      return 'A capacidade deve ser um número inteiro maior que zero.'
+    }
+
+    return null
+  }
+
+  async function salvarSessao(event) {
+    event.preventDefault()
+
+    if (somenteLeitura) {
+      fecharModais()
       return
     }
+
+    const mensagemValidacao =
+      validarFormulario()
+
+    if (mensagemValidacao) {
+      setErroFormulario(mensagemValidacao)
+      return
+    }
+
+    const capacidade = Number(
+      formulario.capacity,
+    )
 
     setSalvando(true)
     setErroFormulario('')
 
     try {
-      const novaSessao = await criarSessao({
-        eventId: eventoSelecionado.id,
-        date: formulario.date,
-        startTime: formulario.startTime,
-        capacity: capacidade,
-        status: formulario.status,
-      })
+      if (modoModal === 'create') {
+        const novaSessao =
+          await criarSessao({
+            eventId: eventoSelecionado.id,
+            date: formulario.date,
+            startTime: formulario.startTime,
+            capacity: capacidade,
+            status: formulario.status,
+          })
 
-      setSessoes((sessoesAtuais) =>
-        ordenarSessoes([
-          ...sessoesAtuais,
-          novaSessao,
-        ]),
-      )
+        setSessoes((sessoesAtuais) =>
+          ordenarSessoes([
+            ...sessoesAtuais,
+            novaSessao,
+          ]),
+        )
 
-      setDataSelecionada(novaSessao.date)
+        setDataSelecionada(novaSessao.date)
 
-      setMensagemSucesso(
-        'Sessão cadastrada com sucesso.',
-      )
+        setMensagemSucesso(
+          'Sessão cadastrada com sucesso.',
+        )
+      }
 
-      setModalAberto(false)
-      setFormulario(FORMULARIO_INICIAL)
+      if (
+        modoModal === 'edit' &&
+        sessaoSelecionada
+      ) {
+        const sessaoAtualizada =
+          await atualizarSessao(
+            sessaoSelecionada.id,
+            {
+              date: formulario.date,
+              startTime:
+                formulario.startTime,
+              capacity: capacidade,
+              status: formulario.status,
+              version: formulario.version,
+            },
+          )
+
+        setSessoes((sessoesAtuais) =>
+          ordenarSessoes(
+            sessoesAtuais.map((sessao) =>
+              sessao.id ===
+              sessaoAtualizada.id
+                ? sessaoAtualizada
+                : sessao,
+            ),
+          ),
+        )
+
+        setDataSelecionada(
+          sessaoAtualizada.date,
+        )
+
+        setMensagemSucesso(
+          'Sessão atualizada com sucesso.',
+        )
+      }
+
+      fecharModais()
     } catch (error) {
       setErroFormulario(
         error.message ||
-          'Não foi possível cadastrar a sessão.',
+          'Não foi possível salvar a sessão.',
       )
     } finally {
       setSalvando(false)
     }
+  }
+
+  async function confirmarDesativarSessao() {
+    if (!sessaoSelecionada) {
+      return
+    }
+
+    setProcessandoAcao(true)
+    setErro('')
+
+    try {
+      await desativarSessao(
+        sessaoSelecionada.id,
+      )
+
+      setSessoes((sessoesAtuais) =>
+        sessoesAtuais.filter(
+          (sessao) =>
+            sessao.id !==
+            sessaoSelecionada.id,
+        ),
+      )
+
+      setMensagemSucesso(
+        'Sessão desativada com sucesso.',
+      )
+
+      setConfirmarDesativacao(false)
+      setSessaoSelecionada(null)
+    } catch (error) {
+      setErro(
+        error.message ||
+          'Não foi possível desativar a sessão.',
+      )
+    } finally {
+      setProcessandoAcao(false)
+    }
+  }
+
+  function obterTituloModal() {
+    if (modoModal === 'view') {
+      return 'Visualizar sessão'
+    }
+
+    if (modoModal === 'edit') {
+      return 'Editar sessão'
+    }
+
+    return 'Nova sessão'
   }
 
   return (
@@ -830,7 +1026,14 @@ function Sessoes() {
                             sessao.startTime,
                           )}`}
                           title="Visualizar"
-                          disabled
+                          onClick={() =>
+                            abrirModalVisualizar(
+                              sessao.id,
+                            )
+                          }
+                          disabled={
+                            carregandoDetalhes
+                          }
                         >
                           ◉
                         </button>
@@ -841,20 +1044,32 @@ function Sessoes() {
                             sessao.startTime,
                           )}`}
                           title="Editar"
-                          disabled
+                          onClick={() =>
+                            abrirModalEditar(
+                              sessao.id,
+                            )
+                          }
+                          disabled={
+                            carregandoDetalhes
+                          }
                         >
                           ✎
                         </button>
 
                         <button
                           type="button"
-                          aria-label={`Mais ações da sessão das ${formatarHorario(
+                          className="sessao-danger-action"
+                          aria-label={`Desativar sessão das ${formatarHorario(
                             sessao.startTime,
                           )}`}
-                          title="Mais ações"
-                          disabled
+                          title="Desativar"
+                          onClick={() =>
+                            abrirConfirmacaoDesativacao(
+                              sessao,
+                            )
+                          }
                         >
-                          •••
+                          ×
                         </button>
                       </div>
                     </div>
@@ -872,7 +1087,6 @@ function Sessoes() {
             <div className="sessoes-summary-grid">
               <div className="sessoes-summary-item total">
                 <span aria-hidden="true">▣</span>
-
                 <div>
                   <small>Sessões no dia</small>
                   <strong>
@@ -883,12 +1097,10 @@ function Sessoes() {
 
               <div className="sessoes-summary-item capacidade">
                 <span aria-hidden="true">♙</span>
-
                 <div>
                   <small>
                     Capacidade total
                   </small>
-
                   <strong>
                     {resumoDoDia.capacidade}
                   </strong>
@@ -897,7 +1109,6 @@ function Sessoes() {
 
               <div className="sessoes-summary-item planejadas">
                 <span aria-hidden="true">◷</span>
-
                 <div>
                   <small>Planejadas</small>
                   <strong>
@@ -908,7 +1119,6 @@ function Sessoes() {
 
               <div className="sessoes-summary-item abertas">
                 <span aria-hidden="true">✓</span>
-
                 <div>
                   <small>Abertas</small>
                   <strong>
@@ -919,7 +1129,6 @@ function Sessoes() {
 
               <div className="sessoes-summary-item encerradas">
                 <span aria-hidden="true">▣</span>
-
                 <div>
                   <small>Encerradas</small>
                   <strong>
@@ -930,7 +1139,6 @@ function Sessoes() {
 
               <div className="sessoes-summary-item canceladas">
                 <span aria-hidden="true">×</span>
-
                 <div>
                   <small>Canceladas</small>
                   <strong>
@@ -951,11 +1159,9 @@ function Sessoes() {
                 title="Disponível na próxima etapa."
               >
                 <span aria-hidden="true">▣</span>
-
                 <strong>
                   Gerar sessões para este dia
                 </strong>
-
                 <span aria-hidden="true">›</span>
               </button>
 
@@ -965,11 +1171,9 @@ function Sessoes() {
                 title="Disponível em uma etapa futura."
               >
                 <span aria-hidden="true">▢</span>
-
                 <strong>
                   Copiar sessões de outro dia
                 </strong>
-
                 <span aria-hidden="true">›</span>
               </button>
 
@@ -979,11 +1183,9 @@ function Sessoes() {
                 title="Disponível em uma etapa futura."
               >
                 <span aria-hidden="true">↓</span>
-
                 <strong>
                   Exportar lista do dia
                 </strong>
-
                 <span aria-hidden="true">›</span>
               </button>
 
@@ -993,11 +1195,9 @@ function Sessoes() {
                 title="Disponível em uma etapa futura."
               >
                 <span aria-hidden="true">▤</span>
-
                 <strong>
                   Imprimir lista do dia
                 </strong>
-
                 <span aria-hidden="true">›</span>
               </button>
             </div>
@@ -1039,7 +1239,7 @@ function Sessoes() {
             if (
               event.target === event.currentTarget
             ) {
-              fecharModal()
+              fecharModais()
             }
           }}
         >
@@ -1047,14 +1247,14 @@ function Sessoes() {
             className="sessao-modal"
             role="dialog"
             aria-modal="true"
-            aria-labelledby="titulo-nova-sessao"
+            aria-labelledby="titulo-modal-sessao"
           >
             <div className="sessao-modal-header">
               <div>
                 <span>Programação</span>
 
-                <h2 id="titulo-nova-sessao">
-                  Nova sessão
+                <h2 id="titulo-modal-sessao">
+                  {obterTituloModal()}
                 </h2>
               </div>
 
@@ -1062,7 +1262,7 @@ function Sessoes() {
                 type="button"
                 className="sessao-modal-close"
                 aria-label="Fechar modal"
-                onClick={fecharModal}
+                onClick={fecharModais}
                 disabled={salvando}
               >
                 ×
@@ -1118,7 +1318,10 @@ function Sessoes() {
                     onChange={
                       atualizarCampoFormulario
                     }
-                    disabled={salvando}
+                    disabled={
+                      salvando ||
+                      somenteLeitura
+                    }
                     required
                   />
                 </div>
@@ -1138,7 +1341,10 @@ function Sessoes() {
                     onChange={
                       atualizarCampoFormulario
                     }
-                    disabled={salvando}
+                    disabled={
+                      salvando ||
+                      somenteLeitura
+                    }
                     required
                   />
                 </div>
@@ -1159,14 +1365,12 @@ function Sessoes() {
                   onChange={
                     atualizarCampoFormulario
                   }
-                  disabled={salvando}
+                  disabled={
+                    salvando ||
+                    somenteLeitura
+                  }
                   required
                 />
-
-                <small>
-                  Quantidade máxima de pessoas
-                  permitida nesta sessão.
-                </small>
               </div>
 
               <div className="sessao-form-group">
@@ -1181,26 +1385,41 @@ function Sessoes() {
                   onChange={
                     atualizarCampoFormulario
                   }
-                  disabled={salvando}
+                  disabled={
+                    salvando ||
+                    somenteLeitura
+                  }
                   required
                 >
                   <option value="PLANNED">
                     Planejada
                   </option>
-
                   <option value="OPEN">
                     Aberta
                   </option>
-
                   <option value="CLOSED">
                     Encerrada
                   </option>
-
                   <option value="CANCELLED">
                     Cancelada
                   </option>
                 </select>
               </div>
+
+              {sessaoSelecionada &&
+                modoModal !== 'create' && (
+                  <div className="sessao-form-group">
+                    <label>Versão do registro</label>
+
+                    <input
+                      type="text"
+                      value={
+                        sessaoSelecionada.version
+                      }
+                      disabled
+                    />
+                  </div>
+                )}
 
               {erroFormulario && (
                 <p
@@ -1215,23 +1434,118 @@ function Sessoes() {
                 <button
                   type="button"
                   className="sessao-cancel-button"
-                  onClick={fecharModal}
+                  onClick={fecharModais}
                   disabled={salvando}
+                >
+                  {somenteLeitura
+                    ? 'Fechar'
+                    : 'Cancelar'}
+                </button>
+
+                {!somenteLeitura && (
+                  <button
+                    type="submit"
+                    className="sessao-save-button"
+                    disabled={salvando}
+                  >
+                    {salvando
+                      ? 'Salvando...'
+                      : modoModal === 'edit'
+                        ? 'Salvar alterações'
+                        : 'Salvar sessão'}
+                  </button>
+                )}
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {confirmarDesativacao && (
+        <div
+          className="sessao-modal-overlay"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (
+              event.target === event.currentTarget
+            ) {
+              fecharModais()
+            }
+          }}
+        >
+          <div
+            className="sessao-modal sessao-confirm-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="titulo-desativar-sessao"
+          >
+            <div className="sessao-modal-header">
+              <div>
+                <span>Atenção</span>
+
+                <h2 id="titulo-desativar-sessao">
+                  Desativar sessão
+                </h2>
+              </div>
+
+              <button
+                type="button"
+                className="sessao-modal-close"
+                aria-label="Fechar modal"
+                onClick={fecharModais}
+                disabled={processandoAcao}
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="sessao-form">
+              <p className="sessao-confirm-text">
+                Deseja desativar a sessão das{' '}
+                <strong>
+                  {formatarHorario(
+                    sessaoSelecionada?.startTime,
+                  )}
+                </strong>{' '}
+                do dia{' '}
+                <strong>
+                  {formatarDataCurta(
+                    sessaoSelecionada?.date,
+                  )}
+                </strong>
+                ?
+              </p>
+
+              <p className="sessao-confirm-warning">
+                A sessão deixará de aparecer na
+                programação, mas continuará registrada
+                no banco de dados.
+              </p>
+
+              <div className="sessao-modal-actions">
+                <button
+                  type="button"
+                  className="sessao-cancel-button"
+                  onClick={fecharModais}
+                  disabled={processandoAcao}
                 >
                   Cancelar
                 </button>
 
                 <button
-                  type="submit"
-                  className="sessao-save-button"
-                  disabled={salvando}
+                  type="button"
+                  className="sessao-danger-button"
+                  onClick={
+                    confirmarDesativarSessao
+                  }
+                  disabled={processandoAcao}
                 >
-                  {salvando
-                    ? 'Salvando...'
-                    : 'Salvar sessão'}
+                  {processandoAcao
+                    ? 'Desativando...'
+                    : 'Desativar sessão'}
                 </button>
               </div>
-            </form>
+            </div>
           </div>
         </div>
       )}

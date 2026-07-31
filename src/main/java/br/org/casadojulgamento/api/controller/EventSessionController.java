@@ -12,6 +12,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import br.org.casadojulgamento.api.dto.session.GenerateEventSessionsRequest;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/sessions")
@@ -27,6 +29,14 @@ public class EventSessionController {
             @Valid @RequestBody CreateEventSessionRequest request
     ) {
         return eventSessionService.criar(request);
+    }
+
+    @PostMapping("/generate")
+    @ResponseStatus(HttpStatus.CREATED)
+    public List<EventSessionResponse> gerar(
+            @Valid @RequestBody GenerateEventSessionsRequest request
+    ) {
+        return eventSessionService.gerar(request);
     }
 
     @GetMapping

@@ -3,6 +3,7 @@ package br.org.casadojulgamento.service;
 import br.org.casadojulgamento.api.dto.session.CreateEventSessionRequest;
 import br.org.casadojulgamento.api.dto.session.EventSessionFilterRequest;
 import br.org.casadojulgamento.api.dto.session.EventSessionResponse;
+import br.org.casadojulgamento.api.dto.session.GenerateEventSessionsRequest;
 import br.org.casadojulgamento.api.dto.session.UpdateEventSessionRequest;
 import br.org.casadojulgamento.domain.entity.Event;
 import br.org.casadojulgamento.domain.entity.EventSession;
@@ -20,12 +21,19 @@ import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
 public class EventSessionService {
+
+    private static final int MAX_SESSIONS_PER_GENERATION = 1000;
 
     private final EventSessionRepository sessionRepository;
     private final EventRepository eventRepository;
@@ -73,6 +81,66 @@ public class EventSessionService {
         }
     }
 
+    @Transactional
+    public List<EventSessionResponse> gerar(
+            GenerateEventSessionsRequest request
+    ) {
+        Event event = buscarEventoAtivo(request.eventId());
+
+        validarParametrosDaGeracao(request, event);
+
+        List<SessionKey> horariosSolicitados =
+                montarHorariosDaGeracao(request);
+
+        if (horariosSolicitados.isEmpty()) {
+            throw new BusinessException(
+                    "Nenhuma sessão foi gerada para os dias da semana selecionados."
+            );
+        }
+
+        if (horariosSolicitados.size() > MAX_SESSIONS_PER_GENERATION) {
+            throw new BusinessException(
+                    "A geração está limitada a "
+                            + MAX_SESSIONS_PER_GENERATION
+                            + " sessões por operação."
+            );
+        }
+
+        validarConflitosExistentes(
+                event.getId(),
+                request.startDate(),
+                request.endDate(),
+                horariosSolicitados
+        );
+
+        List<EventSession> sessoes = horariosSolicitados.stream()
+                .map(horario ->
+                        EventSession.builder()
+                                .event(event)
+                                .date(horario.date())
+                                .startTime(horario.startTime())
+                                .capacity(request.capacity())
+                                .status(request.status())
+                                .active(true)
+                                .build()
+                )
+                .toList();
+
+        try {
+            return sessionRepository
+                    .saveAllAndFlush(sessoes)
+                    .stream()
+                    .map(this::toResponse)
+                    .toList();
+
+        } catch (DataIntegrityViolationException exception) {
+            throw new BusinessException(
+                    "Uma ou mais sessões já foram criadas por outro usuário. "
+                            + "Nenhuma sessão desta operação foi salva."
+            );
+        }
+    }
+
     @Transactional(readOnly = true)
     public Page<EventSessionResponse> listar(
             EventSessionFilterRequest filter,
@@ -113,7 +181,8 @@ public class EventSessionService {
 
         if (!session.getVersion().equals(request.version())) {
             throw new BusinessException(
-                    "A sessão foi alterada por outro usuário. Atualize a página e tente novamente."
+                    "A sessão foi alterada por outro usuário. "
+                            + "Atualize a página e tente novamente."
             );
         }
 
@@ -146,7 +215,8 @@ public class EventSessionService {
 
         } catch (ObjectOptimisticLockingFailureException exception) {
             throw new BusinessException(
-                    "A sessão foi alterada por outro usuário. Atualize a página e tente novamente."
+                    "A sessão foi alterada por outro usuário. "
+                            + "Atualize a página e tente novamente."
             );
 
         } catch (DataIntegrityViolationException exception) {
@@ -167,8 +237,117 @@ public class EventSessionService {
 
         } catch (ObjectOptimisticLockingFailureException exception) {
             throw new BusinessException(
-                    "A sessão foi alterada por outro usuário. Atualize a página e tente novamente."
+                    "A sessão foi alterada por outro usuário. "
+                            + "Atualize a página e tente novamente."
             );
+        }
+    }
+
+    private void validarParametrosDaGeracao(
+            GenerateEventSessionsRequest request,
+            Event event
+    ) {
+        if (request.startDate().isAfter(request.endDate())) {
+            throw new BusinessException(
+                    "A data inicial não pode ser posterior à data final."
+            );
+        }
+
+        if (!request.startTime().isBefore(request.endTime())) {
+            throw new BusinessException(
+                    "O horário inicial deve ser anterior ao horário final."
+            );
+        }
+
+        validarDataDentroDoEvento(
+                request.startDate(),
+                event
+        );
+
+        validarDataDentroDoEvento(
+                request.endDate(),
+                event
+        );
+    }
+
+    private List<SessionKey> montarHorariosDaGeracao(
+            GenerateEventSessionsRequest request
+    ) {
+        List<SessionKey> horarios = new ArrayList<>();
+
+        Set<DayOfWeek> diasSelecionados =
+                request.weekdays() == null
+                        ? Set.of()
+                        : request.weekdays();
+
+        LocalDate dataAtual = request.startDate();
+
+        while (!dataAtual.isAfter(request.endDate())) {
+
+            boolean gerarNesteDia =
+                    diasSelecionados.isEmpty()
+                            || diasSelecionados.contains(
+                                    dataAtual.getDayOfWeek()
+                            );
+
+            if (gerarNesteDia) {
+                LocalTime horarioAtual = request.startTime();
+
+                while (horarioAtual.isBefore(request.endTime())) {
+                    horarios.add(
+                            new SessionKey(
+                                    dataAtual,
+                                    horarioAtual
+                            )
+                    );
+
+                    horarioAtual = horarioAtual.plusMinutes(
+                            request.intervalMinutes()
+                    );
+                }
+            }
+
+            dataAtual = dataAtual.plusDays(1);
+        }
+
+        return horarios;
+    }
+
+    private void validarConflitosExistentes(
+            Long eventId,
+            LocalDate startDate,
+            LocalDate endDate,
+            List<SessionKey> horariosSolicitados
+    ) {
+        List<EventSession> sessoesExistentes =
+                sessionRepository
+                        .findAllByEventIdAndDateBetweenAndActiveTrue(
+                                eventId,
+                                startDate,
+                                endDate
+                        );
+
+        Set<SessionKey> horariosExistentes = new HashSet<>();
+
+        for (EventSession session : sessoesExistentes) {
+            horariosExistentes.add(
+                    new SessionKey(
+                            session.getDate(),
+                            session.getStartTime()
+                    )
+            );
+        }
+
+        for (SessionKey horario : horariosSolicitados) {
+            if (horariosExistentes.contains(horario)) {
+                throw new BusinessException(
+                        "Já existe uma sessão ativa em "
+                                + horario.date()
+                                + " às "
+                                + horario.startTime()
+                                + ". Nenhuma sessão foi criada."
+                );
+            }
         }
     }
 
@@ -220,7 +399,7 @@ public class EventSessionService {
 
         if (
                 sessionDate.isBefore(event.getStartDate())
-                || sessionDate.isAfter(event.getEndDate())
+                        || sessionDate.isAfter(event.getEndDate())
         ) {
             throw new BusinessException(
                     "A data da sessão deve estar dentro do período do evento."
@@ -286,5 +465,11 @@ public class EventSessionService {
                 session.getCreatedAt(),
                 session.getUpdatedAt()
         );
+    }
+
+    private record SessionKey(
+            LocalDate date,
+            LocalTime startTime
+    ) {
     }
 }

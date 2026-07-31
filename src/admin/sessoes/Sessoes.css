@@ -1053,3 +1053,179 @@
   cursor: not-allowed;
   opacity: 0.6;
 }
+
+/* GERADOR AUTOMÁTICO — DIAS DA SEMANA */
+
+.geracao-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(54px, 1fr));
+  gap: 9px;
+  margin-top: 7px;
+}
+
+.geracao-weekday {
+  position: relative;
+  min-width: 0;
+  min-height: 86px;
+  padding: 11px 6px 10px;
+  border: 1px solid #dedede;
+  border-radius: 10px;
+  cursor: pointer;
+  background: #ffffff;
+  color: #4f4f4f;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.geracao-weekday:hover:not(:disabled) {
+  border-color: #b00000;
+  color: #b00000;
+  box-shadow: 0 6px 16px rgba(176, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+.geracao-weekday:focus-visible {
+  outline: 3px solid rgba(176, 0, 0, 0.18);
+  outline-offset: 2px;
+}
+
+.geracao-weekday:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.geracao-weekday-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 25px;
+  margin-bottom: 4px;
+  color: #777777;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.geracao-weekday strong {
+  display: block;
+  color: inherit;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.6px;
+}
+
+.geracao-weekday-check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 17px;
+  height: 17px;
+  margin: 7px auto 0;
+  border: 2px solid #a8a8a8;
+  border-radius: 50%;
+  color: transparent;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+.geracao-weekday.active {
+  border-color: #b00000;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(176, 0, 0, 0.04),
+      rgba(176, 0, 0, 0.09)
+    );
+  color: #b00000;
+  box-shadow: 0 7px 18px rgba(176, 0, 0, 0.1);
+}
+
+.geracao-weekday.active .geracao-weekday-icon {
+  color: #b00000;
+}
+
+.geracao-weekday.active .geracao-weekday-check {
+  border-color: #b00000;
+  background: #b00000;
+  color: #ffffff;
+}
+
+/* PREVISÃO DA GERAÇÃO */
+
+.geracao-preview {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  margin: 4px 0 20px;
+  padding: 14px 16px;
+  border: 1px solid rgba(176, 0, 0, 0.12);
+  border-radius: 10px;
+  background: rgba(176, 0, 0, 0.045);
+}
+
+.geracao-preview-icon {
+  display: flex;
+  flex: 0 0 42px;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(176, 0, 0, 0.11);
+  color: #b00000;
+  font-size: 18px;
+}
+
+.geracao-preview-content {
+  min-width: 0;
+}
+
+.geracao-preview-content > div {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 4px;
+}
+
+.geracao-preview-content span {
+  color: #3d3d3d;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.geracao-preview-content strong {
+  color: #b00000;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.geracao-preview-content small {
+  color: #777777;
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+@media (max-width: 700px) {
+  .geracao-weekdays {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .geracao-weekday {
+    min-height: 78px;
+  }
+}
+
+@media (max-width: 430px) {
+  .geracao-weekdays {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}

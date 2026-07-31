@@ -38,7 +38,10 @@ export function listarSessoes(filtros = {}) {
   })
 
   const sortQuery = sorts
-    .map((sort) => `sort=${encodeURIComponent(sort)}`)
+    .map(
+      (sort) =>
+        `sort=${encodeURIComponent(sort)}`,
+    )
     .join('&')
 
   const separador = query ? '&' : '?'
@@ -54,6 +57,13 @@ export function buscarSessaoPorId(id) {
 
 export function criarSessao(dados) {
   return apiRequest('/sessions', {
+    method: 'POST',
+    body: JSON.stringify(dados),
+  })
+}
+
+export function gerarSessoes(dados) {
+  return apiRequest('/sessions/generate', {
     method: 'POST',
     body: JSON.stringify(dados),
   })

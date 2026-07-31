@@ -5,6 +5,7 @@ import {
 } from 'react'
 
 import Toast from '../../components/ui/Toast'
+import GerarSessoesModal from './GerarSessoesModal'
 import { listarEventos } from '../../services/eventService'
 import {
   atualizarSessao,
@@ -773,15 +774,21 @@ function Sessoes() {
         </div>
 
         <div className="sessoes-topbar-actions">
-          <button
-            type="button"
-            className="gerar-sessoes-button"
-            disabled={!eventoSelecionado}
-            title="A geração automática será implementada na próxima etapa."
-          >
-            <span aria-hidden="true">↻</span>
-            Gerar sessões
-          </button>
+         <GerarSessoesModal
+            evento={eventoSelecionado}
+            onGenerated={async (sessoesGeradas) => {
+              await carregarSessoes(
+                eventoSelecionado.id,
+              )
+
+              if (sessoesGeradas.length > 0) {
+                setDataSelecionada(
+                  sessoesGeradas[0].date,
+                )
+              }
+            }}
+            onSuccess={setMensagemSucesso}
+          />
 
           <button
             type="button"

@@ -11,7 +11,6 @@ import Eventos from './admin/eventos/Eventos.jsx'
 import Sessoes from './admin/sessoes/Sessoes.jsx'
 import Participantes from './admin/participantes/Participantes.jsx'
 import Ingressos from './admin/ingressos/Ingressos.jsx'
-import Portaria from './admin/portaria/Portaria.jsx'
 import Decisoes from './admin/decisoes/Decisoes.jsx'
 import Igrejas from './admin/igrejas/Igrejas.jsx'
 import Usuarios from './admin/usuarios/Usuarios.jsx'
@@ -89,11 +88,6 @@ function App() {
         <Route
           path="ingressos"
           element={<Ingressos />}
-        />
-
-        <Route
-          path="portaria"
-          element={<Portaria />}
         />
 
         <Route

@@ -72,10 +72,6 @@ function AdminLayout() {
             Ingressos
           </NavLink>
 
-          <NavLink to="/admin/portaria">
-            Portaria
-          </NavLink>
-
           <p className="sidebar-section-title">
             MINISTÉRIO
           </p>

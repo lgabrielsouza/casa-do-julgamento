@@ -504,3 +504,180 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* AJUSTES DA INTEGRAÇÃO REAL */
+
+.participantes-alert {
+  margin-bottom: 18px;
+  padding: 13px 15px;
+  border: 1px solid #f0caca;
+  border-radius: 9px;
+  background: #fff4f4;
+  color: #9a0000;
+  font-size: 12px;
+}
+
+.participantes-event-filter {
+  margin-bottom: 18px;
+  padding: 18px 20px;
+  border: 1px solid #e5e5e5;
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.participantes-event-filter .participantes-filter-group {
+  max-width: 420px;
+}
+
+.participante-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.participante-danger-action {
+  border-color: #efc5c5;
+  color: #a60000;
+}
+
+.participante-danger-action:hover {
+  border-color: #a60000;
+  background: #fff4f4;
+  color: #a60000;
+}
+
+.origem-badge.sympla {
+  background: #f1ecff;
+  color: #6840b8;
+}
+
+.origem-badge.importacao {
+  background: #eaf6f7;
+  color: #24727a;
+}
+
+.participante-status-badge {
+  display: inline-flex;
+  padding: 5px 8px;
+  border-radius: 20px;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.participante-status-badge.registrado {
+  background: #eef3ff;
+  color: #345da7;
+}
+
+.participante-status-badge.confirmado {
+  background: #eef7f0;
+  color: #27813a;
+}
+
+.participante-status-badge.cancelado {
+  background: #fff0f0;
+  color: #b00000;
+}
+
+.participante-status-badge.ausente {
+  background: #f3f3f3;
+  color: #666666;
+}
+
+.participante-form-group textarea {
+  width: 100%;
+  min-height: 100px;
+  padding: 12px;
+  resize: vertical;
+  border: 1px solid #dcdcdc;
+  border-radius: 8px;
+  outline: none;
+  background: #fafafa;
+  color: #333333;
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.participante-form-group textarea:focus {
+  border-color: #b00000;
+  background: #ffffff;
+}
+
+.participante-form-group input:disabled,
+.participante-form-group select:disabled,
+.participante-form-group textarea:disabled {
+  cursor: not-allowed;
+  background: #f1f1f1;
+  color: #777777;
+}
+
+.participante-form-error {
+  margin: 0 0 14px;
+  padding: 11px 12px;
+  border-radius: 7px;
+  background: #fff0f0;
+  color: #a60000;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.participante-confirm-modal {
+  max-width: 500px;
+}
+
+.participante-confirm-content {
+  padding: 24px;
+}
+
+.participante-confirm-content p {
+  margin-bottom: 10px;
+  color: #333333;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.participante-confirm-content small {
+  display: block;
+  color: #777777;
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.participante-danger-button {
+  min-height: 40px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  background: #b00000;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.participante-danger-button:hover {
+  background: #8f0000;
+}
+
+.participante-danger-button:disabled,
+.participante-save-button:disabled,
+.participante-cancel-button:disabled,
+.participante-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+@media (max-width: 700px) {
+  .participantes-event-filter .participantes-filter-group {
+    max-width: none;
+  }
+
+  .participante-actions {
+    flex-direction: column;
+  }
+
+  .participante-actions .participante-action {
+    width: 100%;
+  }
+}

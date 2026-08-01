@@ -1,79 +1,244 @@
-import { useMemo, useState } from 'react'
+import {
+  useEffect,
+  useMemo,
+  useState,
+} from 'react'
+
+import Toast from '../../components/ui/Toast'
+import { listarEventos } from '../../services/eventService'
+import {
+  listarSessoes,
+} from '../../services/sessionService'
+import {
+  atualizarParticipante,
+  buscarParticipantePorId,
+  criarParticipante,
+  desativarParticipante,
+  listarParticipantes,
+} from '../../services/participantService'
+
 import './Participantes.css'
 
-function Participantes() {
-  const [busca, setBusca] = useState('')
-  const [filtroOrigem, setFiltroOrigem] = useState('todos')
-  const [filtroStatus, setFiltroStatus] = useState('todos')
-  const [modalAberto, setModalAberto] = useState(false)
-  const [modalImportacaoAberto, setModalImportacaoAberto] = useState(false)
+const FORMULARIO_INICIAL = {
+  eventId: '',
+  eventSessionId: '',
+  fullName: '',
+  email: '',
+  phone: '',
+  source: 'MANUAL',
+  status: 'REGISTERED',
+  notes: '',
+  version: null,
+}
 
-  const participantes = [
-    {
-      id: 1,
-      nome: 'João da Silva',
-      telefone: '(83) 99999-0001',
-      email: 'joao@email.com',
-      codigo: 'CJ-000421',
-      data: '29/10/2026',
-      horario: '19:00',
-      origem: 'PagTickets',
-      checkin: true,
-    },
-    {
-      id: 2,
-      nome: 'Maria Souza',
-      telefone: '(83) 99999-0002',
-      email: 'maria@email.com',
-      codigo: 'CJ-000422',
-      data: '29/10/2026',
-      horario: '19:20',
-      origem: 'PagTickets',
-      checkin: false,
-    },
-    {
-      id: 3,
-      nome: 'Pedro Santos',
-      telefone: '(83) 99999-0003',
-      email: 'pedro@email.com',
-      codigo: 'CJ-000423',
-      data: '29/10/2026',
-      horario: '19:40',
-      origem: 'Cortesia',
-      checkin: false,
-    },
-    {
-      id: 4,
-      nome: 'Ana Oliveira',
-      telefone: '(83) 99999-0004',
-      email: 'ana@email.com',
-      codigo: 'CJ-000424',
-      data: '30/10/2026',
-      horario: '19:00',
-      origem: 'Manual',
-      checkin: true,
-    },
-  ]
+const STATUS_CONFIG = {
+  REGISTERED: {
+    label: 'Inscrito',
+    className: 'registrado',
+  },
+  CONFIRMED: {
+    label: 'Confirmado',
+    className: 'confirmado',
+  },
+  CANCELLED: {
+    label: 'Cancelado',
+    className: 'cancelado',
+  },
+  NO_SHOW: {
+    label: 'Ausente',
+    className: 'ausente',
+  },
+}
+
+const ORIGEM_CONFIG = {
+  MANUAL: {
+    label: 'Manual',
+    className: 'manual',
+  },
+  SYMPLA: {
+    label: 'Sympla',
+    className: 'sympla',
+  },
+  IMPORT: {
+    label: 'Importação',
+    className: 'importacao',
+  },
+}
+
+function formatarTelefone(phone) {
+  if (!phone) {
+    return '—'
+  }
+
+  const numeros = phone.replace(/\D/g, '')
+
+  if (numeros.length === 11) {
+    return `(${numeros.slice(0, 2)}) ${numeros.slice(
+      2,
+      7,
+    )}-${numeros.slice(7)}`
+  }
+
+  if (numeros.length === 10) {
+    return `(${numeros.slice(0, 2)}) ${numeros.slice(
+      2,
+      6,
+    )}-${numeros.slice(6)}`
+  }
+
+  return phone
+}
+
+function formatarData(dataIso) {
+  if (!dataIso) {
+    return '—'
+  }
+
+  const [ano, mes, dia] = dataIso
+    .split('-')
+    .map(Number)
+
+  return new Intl.DateTimeFormat('pt-BR').format(
+    new Date(ano, mes - 1, dia),
+  )
+}
+
+function formatarHorario(horario) {
+  if (!horario) {
+    return '—'
+  }
+
+  return horario.slice(0, 5)
+}
+
+function ordenarParticipantes(lista) {
+  return [...lista].sort((a, b) =>
+    a.fullName.localeCompare(b.fullName, 'pt-BR'),
+  )
+}
+
+function Participantes() {
+  const [eventos, setEventos] = useState([])
+  const [
+    eventoSelecionadoId,
+    setEventoSelecionadoId,
+  ] = useState('')
+
+  const [sessoes, setSessoes] = useState([])
+  const [participantes, setParticipantes] =
+    useState([])
+
+  const [busca, setBusca] = useState('')
+  const [filtroOrigem, setFiltroOrigem] =
+    useState('')
+  const [filtroStatus, setFiltroStatus] =
+    useState('')
+
+  const [modalAberto, setModalAberto] =
+    useState(false)
+  const [modoModal, setModoModal] =
+    useState('create')
+
+  const [
+    participanteSelecionado,
+    setParticipanteSelecionado,
+  ] = useState(null)
+
+  const [
+    confirmarDesativacao,
+    setConfirmarDesativacao,
+  ] = useState(false)
+
+  const [formulario, setFormulario] = useState(
+    FORMULARIO_INICIAL,
+  )
+
+  const [
+    carregandoEventos,
+    setCarregandoEventos,
+  ] = useState(true)
+
+  const [
+    carregandoParticipantes,
+    setCarregandoParticipantes,
+  ] = useState(false)
+
+  const [carregandoSessoes, setCarregandoSessoes] =
+    useState(false)
+
+  const [carregandoDetalhes, setCarregandoDetalhes] =
+    useState(false)
+
+  const [salvando, setSalvando] =
+    useState(false)
+
+  const [
+    processandoAcao,
+    setProcessandoAcao,
+  ] = useState(false)
+
+  const [erro, setErro] = useState('')
+  const [
+    erroFormulario,
+    setErroFormulario,
+  ] = useState('')
+
+  const [
+    mensagemSucesso,
+    setMensagemSucesso,
+  ] = useState('')
+
+  const eventoSelecionado = useMemo(
+    () =>
+      eventos.find(
+        (evento) =>
+          String(evento.id) ===
+          String(eventoSelecionadoId),
+      ) || null,
+    [eventos, eventoSelecionadoId],
+  )
+
+  const sessoesPorId = useMemo(() => {
+    return new Map(
+      sessoes.map((sessao) => [
+        String(sessao.id),
+        sessao,
+      ]),
+    )
+  }, [sessoes])
 
   const participantesFiltrados = useMemo(() => {
     const termo = busca.trim().toLowerCase()
+    const somenteNumeros = termo.replace(/\D/g, '')
 
     return participantes.filter((participante) => {
-      const correspondeBusca =
-        !termo ||
-        participante.nome.toLowerCase().includes(termo) ||
-        participante.telefone.toLowerCase().includes(termo) ||
-        participante.email.toLowerCase().includes(termo) ||
-        participante.codigo.toLowerCase().includes(termo)
+    const correspondeNome =
+      participante.fullName
+        .toLowerCase()
+        .includes(termo)
+
+    const correspondeEmail =
+      participante.email
+        ?.toLowerCase()
+        .includes(termo) ?? false
+
+    const correspondeTelefone =
+      somenteNumeros.length > 0 &&
+      participante.phone.includes(somenteNumeros)
+
+    const correspondeBusca =
+      !termo ||
+      correspondeNome ||
+      correspondeEmail ||
+      correspondeTelefone
 
       const correspondeOrigem =
-        filtroOrigem === 'todos' ||
-        participante.origem === filtroOrigem
+        !filtroOrigem ||
+        participante.source === filtroOrigem
 
       const correspondeStatus =
-        filtroStatus === 'todos' ||
-        (filtroStatus === 'realizado' && participante.checkin) ||
-        (filtroStatus === 'pendente' && !participante.checkin)
+        !filtroStatus ||
+        participante.status === filtroStatus
 
       return (
         correspondeBusca &&
@@ -81,10 +246,506 @@ function Participantes() {
         correspondeStatus
       )
     })
-  }, [busca, filtroOrigem, filtroStatus])
+  }, [
+    participantes,
+    busca,
+    filtroOrigem,
+    filtroStatus,
+  ])
+
+  const resumo = useMemo(() => {
+    return participantes.reduce(
+      (resultado, participante) => {
+        resultado.total += 1
+
+        if (
+          participante.status === 'REGISTERED'
+        ) {
+          resultado.inscritos += 1
+        }
+
+        if (
+          participante.status === 'CONFIRMED'
+        ) {
+          resultado.confirmados += 1
+        }
+
+        if (
+          participante.eventSessionId == null
+        ) {
+          resultado.semSessao += 1
+        }
+
+        return resultado
+      },
+      {
+        total: 0,
+        inscritos: 0,
+        confirmados: 0,
+        semSessao: 0,
+      },
+    )
+  }, [participantes])
+
+  const somenteLeitura = modoModal === 'view'
+
+  useEffect(() => {
+    carregarEventos()
+  }, [])
+
+  useEffect(() => {
+    if (!eventoSelecionadoId) {
+      setParticipantes([])
+      setSessoes([])
+      return
+    }
+
+    carregarDadosDoEvento(eventoSelecionadoId)
+  }, [eventoSelecionadoId])
+
+  useEffect(() => {
+    if (!mensagemSucesso) {
+      return undefined
+    }
+
+    const timeout = window.setTimeout(() => {
+      setMensagemSucesso('')
+    }, 4000)
+
+    return () => window.clearTimeout(timeout)
+  }, [mensagemSucesso])
+
+  useEffect(() => {
+    if (!modalAberto && !confirmarDesativacao) {
+      return undefined
+    }
+
+    function fecharComEscape(event) {
+      if (
+        event.key === 'Escape' &&
+        !salvando &&
+        !processandoAcao
+      ) {
+        fecharModais()
+      }
+    }
+
+    document.addEventListener(
+      'keydown',
+      fecharComEscape,
+    )
+
+    return () => {
+      document.removeEventListener(
+        'keydown',
+        fecharComEscape,
+      )
+    }
+  }, [
+    modalAberto,
+    confirmarDesativacao,
+    salvando,
+    processandoAcao,
+  ])
+
+  async function carregarEventos() {
+    setCarregandoEventos(true)
+    setErro('')
+
+    try {
+      const resposta = await listarEventos({
+        page: 0,
+        size: 100,
+        active: true,
+        sort: 'startDate,asc',
+      })
+
+      const eventosRecebidos =
+        resposta.content || []
+
+      setEventos(eventosRecebidos)
+
+      if (eventosRecebidos.length > 0) {
+        setEventoSelecionadoId(
+          String(eventosRecebidos[0].id),
+        )
+      }
+    } catch (error) {
+      setErro(
+        error.message ||
+          'Não foi possível carregar os eventos.',
+      )
+    } finally {
+      setCarregandoEventos(false)
+    }
+  }
+
+  async function carregarDadosDoEvento(eventId) {
+    await Promise.all([
+      carregarParticipantes(eventId),
+      carregarSessoes(eventId),
+    ])
+  }
+
+  async function carregarParticipantes(eventId) {
+    setCarregandoParticipantes(true)
+    setErro('')
+
+    try {
+      const resposta = await listarParticipantes({
+        eventId,
+        page: 0,
+        size: 500,
+        active: true,
+        sort: 'fullName,asc',
+      })
+
+      setParticipantes(
+        ordenarParticipantes(
+          resposta.content || [],
+        ),
+      )
+    } catch (error) {
+      setParticipantes([])
+
+      setErro(
+        error.message ||
+          'Não foi possível carregar os participantes.',
+      )
+    } finally {
+      setCarregandoParticipantes(false)
+    }
+  }
+
+  async function carregarSessoes(eventId) {
+    setCarregandoSessoes(true)
+
+    try {
+      const resposta = await listarSessoes({
+        eventId,
+        page: 0,
+        size: 500,
+        active: true,
+        sort: ['date,asc', 'startTime,asc'],
+      })
+
+      setSessoes(resposta.content || [])
+    } catch {
+      setSessoes([])
+    } finally {
+      setCarregandoSessoes(false)
+    }
+  }
+
+  function selecionarEvento(event) {
+    setEventoSelecionadoId(event.target.value)
+    setBusca('')
+    setFiltroOrigem('')
+    setFiltroStatus('')
+  }
+
+  function abrirModalNovoParticipante() {
+    if (!eventoSelecionado) {
+      setErro(
+        'Selecione um evento antes de cadastrar um participante.',
+      )
+      return
+    }
+
+    setModoModal('create')
+    setParticipanteSelecionado(null)
+    setErroFormulario('')
+
+    setFormulario({
+      ...FORMULARIO_INICIAL,
+      eventId: String(eventoSelecionado.id),
+    })
+
+    setModalAberto(true)
+  }
+
+  async function abrirModalVisualizar(id) {
+    await carregarParticipanteParaModal(
+      id,
+      'view',
+    )
+  }
+
+  async function abrirModalEditar(id) {
+    await carregarParticipanteParaModal(
+      id,
+      'edit',
+    )
+  }
+
+  async function carregarParticipanteParaModal(
+    id,
+    modo,
+  ) {
+    setCarregandoDetalhes(true)
+    setErro('')
+    setErroFormulario('')
+
+    try {
+      const participante =
+        await buscarParticipantePorId(id)
+
+      setParticipanteSelecionado(participante)
+
+      setFormulario({
+        eventId: String(participante.eventId),
+        eventSessionId:
+          participante.eventSessionId != null
+            ? String(
+                participante.eventSessionId,
+              )
+            : '',
+        fullName: participante.fullName || '',
+        email: participante.email || '',
+        phone: participante.phone || '',
+        source:
+          participante.source || 'MANUAL',
+        status:
+          participante.status || 'REGISTERED',
+        notes: participante.notes || '',
+        version: participante.version,
+      })
+
+      setModoModal(modo)
+      setModalAberto(true)
+    } catch (error) {
+      setErro(
+        error.message ||
+          'Não foi possível carregar o participante.',
+      )
+    } finally {
+      setCarregandoDetalhes(false)
+    }
+  }
+
+  function abrirConfirmacaoDesativacao(
+    participante,
+  ) {
+    setParticipanteSelecionado(participante)
+    setConfirmarDesativacao(true)
+  }
+
+  function fecharModais() {
+    if (salvando || processandoAcao) {
+      return
+    }
+
+    setModalAberto(false)
+    setConfirmarDesativacao(false)
+    setParticipanteSelecionado(null)
+    setModoModal('create')
+    setErroFormulario('')
+    setFormulario(FORMULARIO_INICIAL)
+  }
+
+  function atualizarCampoFormulario(event) {
+    const { name, value } = event.target
+
+    setFormulario((formularioAtual) => ({
+      ...formularioAtual,
+      [name]: value,
+    }))
+  }
+
+  function validarFormulario() {
+    if (!eventoSelecionado) {
+      return 'Selecione um evento válido.'
+    }
+
+    if (!formulario.fullName.trim()) {
+      return 'Informe o nome completo.'
+    }
+
+    if (!formulario.phone.trim()) {
+      return 'Informe o telefone.'
+    }
+
+    const telefone = formulario.phone.replace(
+      /\D/g,
+      '',
+    )
+
+    if (telefone.length < 10) {
+      return 'Informe um telefone válido com DDD.'
+    }
+
+    if (
+      formulario.email &&
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
+        formulario.email,
+      )
+    ) {
+      return 'Informe um e-mail válido.'
+    }
+
+    if (!formulario.status) {
+      return 'Selecione o status.'
+    }
+
+    return null
+  }
+
+  async function salvarParticipante(event) {
+    event.preventDefault()
+
+    if (somenteLeitura) {
+      fecharModais()
+      return
+    }
+
+    const mensagemValidacao =
+      validarFormulario()
+
+    if (mensagemValidacao) {
+      setErroFormulario(mensagemValidacao)
+      return
+    }
+
+    setSalvando(true)
+    setErroFormulario('')
+
+    const eventSessionId =
+      formulario.eventSessionId
+        ? Number(formulario.eventSessionId)
+        : null
+
+    try {
+      if (modoModal === 'create') {
+        const novoParticipante =
+          await criarParticipante({
+            eventId: eventoSelecionado.id,
+            eventSessionId,
+            fullName: formulario.fullName,
+            email: formulario.email || null,
+            phone: formulario.phone,
+            source: 'MANUAL',
+            status: formulario.status,
+            notes: formulario.notes || null,
+          })
+
+        setParticipantes(
+          (participantesAtuais) =>
+            ordenarParticipantes([
+              ...participantesAtuais,
+              novoParticipante,
+            ]),
+        )
+
+        setMensagemSucesso(
+          'Participante cadastrado com sucesso.',
+        )
+      }
+
+      if (
+        modoModal === 'edit' &&
+        participanteSelecionado
+      ) {
+        const participanteAtualizado =
+          await atualizarParticipante(
+            participanteSelecionado.id,
+            {
+              eventSessionId,
+              fullName: formulario.fullName,
+              email: formulario.email || null,
+              phone: formulario.phone,
+              status: formulario.status,
+              notes: formulario.notes || null,
+              version: formulario.version,
+            },
+          )
+
+        setParticipantes(
+          (participantesAtuais) =>
+            ordenarParticipantes(
+              participantesAtuais.map(
+                (participante) =>
+                  participante.id ===
+                  participanteAtualizado.id
+                    ? participanteAtualizado
+                    : participante,
+              ),
+            ),
+        )
+
+        setMensagemSucesso(
+          'Participante atualizado com sucesso.',
+        )
+      }
+
+      fecharModais()
+    } catch (error) {
+      setErroFormulario(
+        error.message ||
+          'Não foi possível salvar o participante.',
+      )
+    } finally {
+      setSalvando(false)
+    }
+  }
+
+  async function confirmarDesativarParticipante() {
+    if (!participanteSelecionado) {
+      return
+    }
+
+    setProcessandoAcao(true)
+    setErro('')
+
+    try {
+      await desativarParticipante(
+        participanteSelecionado.id,
+      )
+
+      setParticipantes(
+        (participantesAtuais) =>
+          participantesAtuais.filter(
+            (participante) =>
+              participante.id !==
+              participanteSelecionado.id,
+          ),
+      )
+
+      setMensagemSucesso(
+        'Participante desativado com sucesso.',
+      )
+
+      setConfirmarDesativacao(false)
+      setParticipanteSelecionado(null)
+    } catch (error) {
+      setErro(
+        error.message ||
+          'Não foi possível desativar o participante.',
+      )
+    } finally {
+      setProcessandoAcao(false)
+    }
+  }
+
+  function obterTituloModal() {
+    if (modoModal === 'view') {
+      return 'Visualizar participante'
+    }
+
+    if (modoModal === 'edit') {
+      return 'Editar participante'
+    }
+
+    return 'Novo participante'
+  }
 
   return (
     <div className="participantes-page">
+      <Toast
+        tipo="success"
+        mensagem={mensagemSucesso}
+        visivel={Boolean(mensagemSucesso)}
+      />
+
       <div className="participantes-heading">
         <div>
           <p className="participantes-eyebrow">
@@ -94,67 +755,84 @@ function Participantes() {
           <h1>Participantes</h1>
 
           <p>
-            Consulte, filtre e gerencie os participantes do evento.
+            Consulte, filtre e gerencie os
+            participantes do evento.
           </p>
         </div>
 
         <div className="participantes-heading-actions">
           <button
             type="button"
-            className="participante-import-button"
-            onClick={() => setModalImportacaoAberto(true)}
-          >
-            Importar PagTickets
-          </button>
-
-          <button
-            type="button"
             className="participante-new-button"
-            onClick={() => setModalAberto(true)}
+            onClick={abrirModalNovoParticipante}
+            disabled={
+              carregandoEventos ||
+              !eventoSelecionado
+            }
           >
             + Novo participante
           </button>
         </div>
       </div>
 
+      {erro && (
+        <div className="participantes-alert">
+          {erro}
+        </div>
+      )}
+
+      <section className="participantes-event-filter">
+        <div className="participantes-filter-group">
+          <label htmlFor="eventoParticipantes">
+            Evento
+          </label>
+
+          <select
+            id="eventoParticipantes"
+            value={eventoSelecionadoId}
+            onChange={selecionarEvento}
+            disabled={
+              carregandoEventos ||
+              eventos.length === 0
+            }
+          >
+            {eventos.length === 0 ? (
+              <option value="">
+                Nenhum evento disponível
+              </option>
+            ) : (
+              eventos.map((evento) => (
+                <option
+                  key={evento.id}
+                  value={evento.id}
+                >
+                  {evento.name}
+                </option>
+              ))
+            )}
+          </select>
+        </div>
+      </section>
+
       <section className="participantes-summary">
         <div>
-          <span>Total</span>
-          <strong>{participantes.length}</strong>
+          <span>Total ativo</span>
+          <strong>{resumo.total}</strong>
         </div>
 
         <div>
-          <span>PagTickets</span>
-          <strong>
-            {
-              participantes.filter(
-                (participante) =>
-                  participante.origem === 'PagTickets',
-              ).length
-            }
-          </strong>
+          <span>Inscritos</span>
+          <strong>{resumo.inscritos}</strong>
         </div>
 
         <div>
-          <span>Check-ins</span>
-          <strong>
-            {
-              participantes.filter(
-                (participante) => participante.checkin,
-              ).length
-            }
-          </strong>
+          <span>Confirmados</span>
+          <strong>{resumo.confirmados}</strong>
         </div>
 
         <div>
-          <span>Pendentes</span>
-          <strong>
-            {
-              participantes.filter(
-                (participante) => !participante.checkin,
-              ).length
-            }
-          </strong>
+          <span>Sem sessão</span>
+          <strong>{resumo.semSessao}</strong>
         </div>
       </section>
 
@@ -168,9 +846,11 @@ function Participantes() {
             <input
               id="buscaParticipante"
               type="search"
-              placeholder="Nome, telefone, e-mail ou código..."
+              placeholder="Nome, telefone ou e-mail..."
               value={busca}
-              onChange={(event) => setBusca(event.target.value)}
+              onChange={(event) =>
+                setBusca(event.target.value)
+              }
             />
           </div>
 
@@ -183,49 +863,50 @@ function Participantes() {
               id="origemParticipante"
               value={filtroOrigem}
               onChange={(event) =>
-                setFiltroOrigem(event.target.value)
+                setFiltroOrigem(
+                  event.target.value,
+                )
               }
             >
-              <option value="todos">
-                Todas
-              </option>
-
-              <option value="PagTickets">
-                PagTickets
-              </option>
-
-              <option value="Cortesia">
-                Cortesia
-              </option>
-
-              <option value="Manual">
+              <option value="">Todas</option>
+              <option value="MANUAL">
                 Manual
+              </option>
+              <option value="SYMPLA">
+                Sympla
+              </option>
+              <option value="IMPORT">
+                Importação
               </option>
             </select>
           </div>
 
           <div className="participantes-filter-group">
             <label htmlFor="statusParticipante">
-              Check-in
+              Status
             </label>
 
             <select
               id="statusParticipante"
               value={filtroStatus}
               onChange={(event) =>
-                setFiltroStatus(event.target.value)
+                setFiltroStatus(
+                  event.target.value,
+                )
               }
             >
-              <option value="todos">
-                Todos
+              <option value="">Todos</option>
+              <option value="REGISTERED">
+                Inscrito
               </option>
-
-              <option value="realizado">
-                Realizado
+              <option value="CONFIRMED">
+                Confirmado
               </option>
-
-              <option value="pendente">
-                Pendente
+              <option value="CANCELLED">
+                Cancelado
+              </option>
+              <option value="NO_SHOW">
+                Ausente
               </option>
             </select>
           </div>
@@ -251,85 +932,163 @@ function Participantes() {
                 <th>Participante</th>
                 <th>Contato</th>
                 <th>Sessão</th>
-                <th>Código</th>
                 <th>Origem</th>
-                <th>Check-in</th>
+                <th>Status</th>
                 <th>Ações</th>
               </tr>
             </thead>
 
             <tbody>
-              {participantesFiltrados.length > 0 ? (
-                participantesFiltrados.map((participante) => (
-                  <tr key={participante.id}>
-                    <td>
-                      <strong>
-                        {participante.nome}
-                      </strong>
+              {carregandoParticipantes ? (
+                <tr>
+                  <td
+                    colSpan="6"
+                    className="participantes-empty"
+                  >
+                    Carregando participantes...
+                  </td>
+                </tr>
+              ) : participantesFiltrados.length >
+                0 ? (
+                participantesFiltrados.map(
+                  (participante) => {
+                    const sessao =
+                      participante.eventSessionId
+                        ? sessoesPorId.get(
+                            String(
+                              participante.eventSessionId,
+                            ),
+                          )
+                        : null
 
-                      <span>
-                        {participante.email}
-                      </span>
-                    </td>
+                    const origem =
+                      ORIGEM_CONFIG[
+                        participante.source
+                      ] || {
+                        label:
+                          participante.source,
+                        className: 'manual',
+                      }
 
-                    <td>
-                      {participante.telefone}
-                    </td>
+                    const status =
+                      STATUS_CONFIG[
+                        participante.status
+                      ] || {
+                        label:
+                          participante.status,
+                        className: 'registrado',
+                      }
 
-                    <td>
-                      <strong>
-                        {participante.data}
-                      </strong>
+                    return (
+                      <tr key={participante.id}>
+                        <td>
+                          <strong>
+                            {participante.fullName}
+                          </strong>
 
-                      <span>
-                        {participante.horario}
-                      </span>
-                    </td>
+                          <span>
+                            {participante.email ||
+                              'Sem e-mail'}
+                          </span>
+                        </td>
 
-                    <td>
-                      <code>
-                        {participante.codigo}
-                      </code>
-                    </td>
+                        <td>
+                          {formatarTelefone(
+                            participante.phone,
+                          )}
+                        </td>
 
-                    <td>
-                      <span
-                        className={`origem-badge ${participante.origem
-                          .toLowerCase()
-                          .replace(' ', '-')}`}
-                      >
-                        {participante.origem}
-                      </span>
-                    </td>
+                        <td>
+                          {sessao ? (
+                            <>
+                              <strong>
+                                {formatarData(
+                                  sessao.date,
+                                )}
+                              </strong>
 
-                    <td>
-                      <span
-                        className={
-                          participante.checkin
-                            ? 'checkin-badge realizado'
-                            : 'checkin-badge pendente'
-                        }
-                      >
-                        {participante.checkin
-                          ? 'Realizado'
-                          : 'Pendente'}
-                      </span>
-                    </td>
+                              <span>
+                                {formatarHorario(
+                                  sessao.startTime,
+                                )}
+                              </span>
+                            </>
+                          ) : (
+                            <span>
+                              Não definida
+                            </span>
+                          )}
+                        </td>
 
-                    <td>
-                      <button
-                        type="button"
-                        className="participante-action"
-                      >
-                        Ver detalhes
-                      </button>
-                    </td>
-                  </tr>
-                ))
+                        <td>
+                          <span
+                            className={`origem-badge ${origem.className}`}
+                          >
+                            {origem.label}
+                          </span>
+                        </td>
+
+                        <td>
+                          <span
+                            className={`participante-status-badge ${status.className}`}
+                          >
+                            {status.label}
+                          </span>
+                        </td>
+
+                        <td>
+                          <div className="participante-actions">
+                            <button
+                              type="button"
+                              className="participante-action"
+                              onClick={() =>
+                                abrirModalVisualizar(
+                                  participante.id,
+                                )
+                              }
+                              disabled={
+                                carregandoDetalhes
+                              }
+                            >
+                              Ver
+                            </button>
+
+                            <button
+                              type="button"
+                              className="participante-action"
+                              onClick={() =>
+                                abrirModalEditar(
+                                  participante.id,
+                                )
+                              }
+                              disabled={
+                                carregandoDetalhes
+                              }
+                            >
+                              Editar
+                            </button>
+
+                            <button
+                              type="button"
+                              className="participante-action participante-danger-action"
+                              onClick={() =>
+                                abrirConfirmacaoDesativacao(
+                                  participante,
+                                )
+                              }
+                            >
+                              Desativar
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  },
+                )
               ) : (
                 <tr>
                   <td
-                    colSpan="7"
+                    colSpan="6"
                     className="participantes-empty"
                   >
                     Nenhum participante encontrado.
@@ -342,24 +1101,65 @@ function Participantes() {
       </section>
 
       {modalAberto && (
-        <div className="participante-modal-overlay">
-          <div className="participante-modal">
+        <div
+          className="participante-modal-overlay"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (
+              event.target === event.currentTarget
+            ) {
+              fecharModais()
+            }
+          }}
+        >
+          <div
+            className="participante-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="titulo-modal-participante"
+          >
             <div className="participante-modal-header">
               <div>
-                <span>Cadastro manual</span>
-                <h2>Novo participante</h2>
+                <span>
+                  {modoModal === 'create'
+                    ? 'Cadastro manual'
+                    : 'Participante'}
+                </span>
+
+                <h2 id="titulo-modal-participante">
+                  {obterTituloModal()}
+                </h2>
               </div>
 
               <button
                 type="button"
                 className="participante-modal-close"
-                onClick={() => setModalAberto(false)}
+                onClick={fecharModais}
+                disabled={salvando}
+                aria-label="Fechar modal"
               >
                 ×
               </button>
             </div>
 
-            <form className="participante-form">
+            <form
+              className="participante-form"
+              onSubmit={salvarParticipante}
+            >
+              <div className="participante-form-group">
+                <label htmlFor="eventoFormulario">
+                  Evento
+                </label>
+
+                <input
+                  id="eventoFormulario"
+                  value={
+                    eventoSelecionado?.name || ''
+                  }
+                  disabled
+                />
+              </div>
+
               <div className="participante-form-group">
                 <label htmlFor="nomeParticipante">
                   Nome completo
@@ -367,8 +1167,18 @@ function Participantes() {
 
                 <input
                   id="nomeParticipante"
+                  name="fullName"
                   type="text"
-                  placeholder="Nome do participante"
+                  maxLength="150"
+                  value={formulario.fullName}
+                  onChange={
+                    atualizarCampoFormulario
+                  }
+                  disabled={
+                    salvando ||
+                    somenteLeitura
+                  }
+                  required
                 />
               </div>
 
@@ -380,8 +1190,18 @@ function Participantes() {
 
                   <input
                     id="telefoneParticipante"
+                    name="phone"
                     type="tel"
-                    placeholder="(83) 99999-9999"
+                    maxLength="20"
+                    value={formulario.phone}
+                    onChange={
+                      atualizarCampoFormulario
+                    }
+                    disabled={
+                      salvando ||
+                      somenteLeitura
+                    }
+                    required
                   />
                 </div>
 
@@ -392,209 +1212,252 @@ function Participantes() {
 
                   <input
                     id="emailParticipante"
+                    name="email"
                     type="email"
-                    placeholder="email@exemplo.com"
+                    maxLength="180"
+                    value={formulario.email}
+                    onChange={
+                      atualizarCampoFormulario
+                    }
+                    disabled={
+                      salvando ||
+                      somenteLeitura
+                    }
                   />
+
+                  <small>Campo opcional.</small>
                 </div>
+              </div>
+
+              <div className="participante-form-group">
+                <label htmlFor="sessaoParticipante">
+                  Sessão
+                </label>
+
+                <select
+                  id="sessaoParticipante"
+                  name="eventSessionId"
+                  value={
+                    formulario.eventSessionId
+                  }
+                  onChange={
+                    atualizarCampoFormulario
+                  }
+                  disabled={
+                    salvando ||
+                    somenteLeitura ||
+                    carregandoSessoes
+                  }
+                >
+                  <option value="">
+                    Sem sessão definida
+                  </option>
+
+                  {sessoes.map((sessao) => (
+                    <option
+                      key={sessao.id}
+                      value={sessao.id}
+                    >
+                      {formatarData(sessao.date)}
+                      {' — '}
+                      {formatarHorario(
+                        sessao.startTime,
+                      )}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="participante-form-row">
                 <div className="participante-form-group">
-                  <label htmlFor="dataParticipante">
-                    Data
+                  <label htmlFor="origemParticipanteForm">
+                    Origem
                   </label>
 
                   <select
-                    id="dataParticipante"
-                    defaultValue=""
+                    id="origemParticipanteForm"
+                    value={formulario.source}
+                    disabled
                   >
-                    <option
-                      value=""
-                      disabled
-                    >
-                      Selecione
+                    <option value="MANUAL">
+                      Manual
                     </option>
-
-                    <option value="29/10/2026">
-                      29/10/2026
+                    <option value="SYMPLA">
+                      Sympla
                     </option>
-
-                    <option value="30/10/2026">
-                      30/10/2026
-                    </option>
-
-                    <option value="31/10/2026">
-                      31/10/2026
-                    </option>
-
-                    <option value="12/11/2026">
-                      12/11/2026
-                    </option>
-
-                    <option value="13/11/2026">
-                      13/11/2026
-                    </option>
-
-                    <option value="14/11/2026">
-                      14/11/2026
+                    <option value="IMPORT">
+                      Importação
                     </option>
                   </select>
                 </div>
 
                 <div className="participante-form-group">
-                  <label htmlFor="horarioParticipante">
-                    Sessão
+                  <label htmlFor="statusParticipanteForm">
+                    Status
                   </label>
 
                   <select
-                    id="horarioParticipante"
-                    defaultValue=""
+                    id="statusParticipanteForm"
+                    name="status"
+                    value={formulario.status}
+                    onChange={
+                      atualizarCampoFormulario
+                    }
+                    disabled={
+                      salvando ||
+                      somenteLeitura
+                    }
+                    required
                   >
-                    <option
-                      value=""
-                      disabled
-                    >
-                      Selecione
+                    <option value="REGISTERED">
+                      Inscrito
                     </option>
-
-                    <option value="19:00">
-                      19:00
+                    <option value="CONFIRMED">
+                      Confirmado
                     </option>
-
-                    <option value="19:20">
-                      19:20
+                    <option value="CANCELLED">
+                      Cancelado
                     </option>
-
-                    <option value="19:40">
-                      19:40
-                    </option>
-
-                    <option value="20:00">
-                      20:00
+                    <option value="NO_SHOW">
+                      Ausente
                     </option>
                   </select>
                 </div>
               </div>
 
               <div className="participante-form-group">
-                <label htmlFor="origemNovoParticipante">
-                  Origem
+                <label htmlFor="observacoesParticipante">
+                  Observações
                 </label>
 
-                <select
-                  id="origemNovoParticipante"
-                  defaultValue="Manual"
-                >
-                  <option value="Manual">
-                    Manual
-                  </option>
-
-                  <option value="Cortesia">
-                    Cortesia
-                  </option>
-                </select>
+                <textarea
+                  id="observacoesParticipante"
+                  name="notes"
+                  rows="4"
+                  maxLength="2000"
+                  value={formulario.notes}
+                  onChange={
+                    atualizarCampoFormulario
+                  }
+                  disabled={
+                    salvando ||
+                    somenteLeitura
+                  }
+                  placeholder="Informações adicionais sobre o participante."
+                />
               </div>
+
+              {erroFormulario && (
+                <p
+                  className="participante-form-error"
+                  role="alert"
+                >
+                  {erroFormulario}
+                </p>
+              )}
 
               <div className="participante-modal-actions">
                 <button
                   type="button"
                   className="participante-cancel-button"
-                  onClick={() => setModalAberto(false)}
+                  onClick={fecharModais}
+                  disabled={salvando}
                 >
-                  Cancelar
+                  {somenteLeitura
+                    ? 'Fechar'
+                    : 'Cancelar'}
                 </button>
 
-                <button
-                  type="submit"
-                  className="participante-save-button"
-                >
-                  Salvar participante
-                </button>
+                {!somenteLeitura && (
+                  <button
+                    type="submit"
+                    className="participante-save-button"
+                    disabled={salvando}
+                  >
+                    {salvando
+                      ? 'Salvando...'
+                      : modoModal === 'edit'
+                        ? 'Salvar alterações'
+                        : 'Salvar participante'}
+                  </button>
+                )}
               </div>
             </form>
           </div>
         </div>
       )}
 
-      {modalImportacaoAberto && (
-        <div className="participante-modal-overlay">
-          <div className="participante-modal importacao-modal">
+      {confirmarDesativacao && (
+        <div
+          className="participante-modal-overlay"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (
+              event.target === event.currentTarget
+            ) {
+              fecharModais()
+            }
+          }}
+        >
+          <div
+            className="participante-modal participante-confirm-modal"
+            role="dialog"
+            aria-modal="true"
+          >
             <div className="participante-modal-header">
               <div>
-                <span>Integração</span>
-                <h2>Importar PagTickets</h2>
+                <span>Atenção</span>
+                <h2>Desativar participante</h2>
               </div>
 
               <button
                 type="button"
                 className="participante-modal-close"
-                onClick={() =>
-                  setModalImportacaoAberto(false)
-                }
+                onClick={fecharModais}
+                disabled={processandoAcao}
               >
                 ×
               </button>
             </div>
 
-            <div className="importacao-content">
-              <div className="importacao-alert">
+            <div className="participante-confirm-content">
+              <p>
+                Deseja desativar{' '}
                 <strong>
-                  PagTickets sem API/Webhook
+                  {
+                    participanteSelecionado?.fullName
+                  }
                 </strong>
+                ?
+              </p>
 
-                <p>
-                  Enquanto não houver integração automática,
-                  os participantes poderão ser importados
-                  através de arquivo exportado pela plataforma.
-                </p>
-              </div>
-
-              <div className="participante-form-group">
-                <label htmlFor="arquivoPagTickets">
-                  Arquivo de participantes
-                </label>
-
-                <input
-                  id="arquivoPagTickets"
-                  type="file"
-                  accept=".csv,.xlsx,.xls"
-                />
-
-                <small>
-                  Formatos aceitos: CSV, XLS ou XLSX.
-                </small>
-              </div>
-
-              <div className="importacao-info">
-                <span>
-                  O sistema deverá identificar:
-                </span>
-
-                <ul>
-                  <li>Nome do participante</li>
-                  <li>Telefone</li>
-                  <li>E-mail</li>
-                  <li>Data e sessão</li>
-                  <li>Código do ingresso</li>
-                </ul>
-              </div>
+              <small>
+                O registro continuará armazenado no
+                banco, mas deixará de aparecer na
+                listagem de participantes ativos.
+              </small>
 
               <div className="participante-modal-actions">
                 <button
                   type="button"
                   className="participante-cancel-button"
-                  onClick={() =>
-                    setModalImportacaoAberto(false)
-                  }
+                  onClick={fecharModais}
+                  disabled={processandoAcao}
                 >
                   Cancelar
                 </button>
 
                 <button
                   type="button"
-                  className="participante-save-button"
+                  className="participante-danger-button"
+                  onClick={
+                    confirmarDesativarParticipante
+                  }
+                  disabled={processandoAcao}
                 >
-                  Importar arquivo
+                  {processandoAcao
+                    ? 'Desativando...'
+                    : 'Desativar participante'}
                 </button>
               </div>
             </div>

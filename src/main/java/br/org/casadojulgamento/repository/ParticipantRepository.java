@@ -7,4 +7,9 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 public interface ParticipantRepository
         extends JpaRepository<Participant, Long>,
                 JpaSpecificationExecutor<Participant> {
+
+    long countByEventSessionIdAndActiveTrueAndIdNot(
+            Long eventSessionId,
+            Long participantId
+    );
 }

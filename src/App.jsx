@@ -10,6 +10,7 @@ import Dashboard from './admin/dashboard/Dashboard.jsx'
 import Eventos from './admin/eventos/Eventos.jsx'
 import Sessoes from './admin/sessoes/Sessoes.jsx'
 import Participantes from './admin/participantes/Participantes.jsx'
+import Recepcao from './admin/recepcao/Recepcao.jsx'
 import Ingressos from './admin/ingressos/Ingressos.jsx'
 import Decisoes from './admin/decisoes/Decisoes.jsx'
 import Igrejas from './admin/igrejas/Igrejas.jsx'
@@ -83,6 +84,11 @@ function App() {
         <Route
           path="participantes"
           element={<Participantes />}
+        />
+
+        <Route
+          path="recepcao"
+          element={<Recepcao />}
         />
 
         <Route

@@ -1,5 +1,6 @@
 package br.org.casadojulgamento.domain.entity;
 
+import br.org.casadojulgamento.domain.enums.ParticipantArrivalStatus;
 import br.org.casadojulgamento.domain.enums.ParticipantSource;
 import br.org.casadojulgamento.domain.enums.ParticipantStatus;
 import jakarta.persistence.*;
@@ -34,6 +35,14 @@ import java.time.LocalDateTime;
                 @Index(
                         name = "idx_participants_active",
                         columnList = "active"
+                ),
+                @Index(
+                        name = "idx_participants_arrival_status",
+                        columnList = "arrival_status"
+                ),
+                @Index(
+                        name = "idx_participants_event_arrival_status",
+                        columnList = "event_id, arrival_status"
                 )
         }
 )
@@ -59,10 +68,7 @@ public class Participant {
     private Event event;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(
-            name = "event_session_id"
-    )
-
+    @JoinColumn(name = "event_session_id")
     private EventSession eventSession;
 
     @Column(
@@ -94,6 +100,17 @@ public class Participant {
             length = 30
     )
     private ParticipantStatus status;
+
+    @Enumerated(EnumType.STRING)
+    @Column(
+            name = "arrival_status",
+            nullable = false,
+            length = 30
+    )
+    private ParticipantArrivalStatus arrivalStatus;
+
+    @Column(name = "arrived_at")
+    private LocalDateTime arrivedAt;
 
     @Column(columnDefinition = "TEXT")
     private String notes;
@@ -131,6 +148,11 @@ public class Participant {
 
         if (status == null) {
             status = ParticipantStatus.REGISTERED;
+        }
+
+        if (arrivalStatus == null) {
+            arrivalStatus =
+                    ParticipantArrivalStatus.NOT_ARRIVED;
         }
 
         if (active == null) {

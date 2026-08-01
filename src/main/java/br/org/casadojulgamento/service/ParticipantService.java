@@ -303,27 +303,30 @@ public class ParticipantService {
         return apenasDigitos;
     }
 
-    private ParticipantResponse toResponse(
-            Participant participant
-    ) {
-        EventSession session =
-                participant.getEventSession();
+private ParticipantResponse toResponse(
+        Participant participant
+) {
+    EventSession session =
+            participant.getEventSession();
 
-        return new ParticipantResponse(
-                participant.getId(),
-                participant.getEvent().getId(),
-                participant.getEvent().getName(),
-                session != null ? session.getId() : null,
-                participant.getFullName(),
-                participant.getEmail(),
-                participant.getPhone(),
-                participant.getSource(),
-                participant.getStatus(),
-                participant.getNotes(),
-                participant.getActive(),
-                participant.getVersion(),
-                participant.getCreatedAt(),
-                participant.getUpdatedAt()
-        );
-    }
+    return new ParticipantResponse(
+            participant.getId(),
+            participant.getEvent().getId(),
+            participant.getEvent().getName(),
+            session != null ? session.getId() : null,
+            participant.getFullName(),
+            participant.getEmail(),
+            participant.getPhone(),
+            participant.getSource(),
+            participant.getStatus(),
+            participant.getArrivalStatus(),
+            participant.getArrivedAt(),
+            participant.getNotes(),
+            participant.getActive(),
+            participant.getVersion(),
+            participant.getCreatedAt(),
+            participant.getUpdatedAt()
+    );
+}
+
 }

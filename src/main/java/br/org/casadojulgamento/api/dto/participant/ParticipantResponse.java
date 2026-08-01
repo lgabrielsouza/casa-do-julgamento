@@ -1,5 +1,6 @@
 package br.org.casadojulgamento.api.dto.participant;
 
+import br.org.casadojulgamento.domain.enums.ParticipantArrivalStatus;
 import br.org.casadojulgamento.domain.enums.ParticipantSource;
 import br.org.casadojulgamento.domain.enums.ParticipantStatus;
 
@@ -24,6 +25,10 @@ public record ParticipantResponse(
         ParticipantSource source,
 
         ParticipantStatus status,
+
+        ParticipantArrivalStatus arrivalStatus,
+
+        LocalDateTime arrivedAt,
 
         String notes,
 

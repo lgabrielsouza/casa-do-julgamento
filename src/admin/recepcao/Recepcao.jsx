@@ -5,6 +5,7 @@ import {
   useState,
 } from 'react'
 
+import { useNavigate } from 'react-router-dom'
 import Toast from '../../components/ui/Toast'
 import { listarEventos } from '../../services/eventService'
 import { listarSessoes } from '../../services/sessionService'
@@ -192,6 +193,8 @@ function ListaParticipantes({
 
 function Recepcao() {
   const buscaInputRef = useRef(null)
+
+  const navigate = useNavigate()
 
   const [eventos, setEventos] = useState([])
   const [sessoes, setSessoes] = useState([])
@@ -829,6 +832,29 @@ function Recepcao() {
             ? 'Atualizando...'
             : 'Atualizar'}
         </button>
+        <div className="recepcao-print-tooltip">
+          <button
+            type="button"
+            className="recepcao-print-session-button"
+            onClick={() =>
+              navigate(
+                `/admin/recepcao/imprimir/${sessaoSelecionadaId}`,
+              )
+            }
+            disabled={
+              carregando ||
+              !sessaoSelecionadaId
+            }
+          >
+            Imprimir lista
+          </button>
+
+          {!sessaoSelecionadaId && (
+            <span className="recepcao-print-tooltip-text">
+              Selecione uma sessão para imprimir
+            </span>
+          )}
+        </div>
       </section>
 
       <section className="recepcao-summary">

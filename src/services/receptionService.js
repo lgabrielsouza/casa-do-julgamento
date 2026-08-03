@@ -119,3 +119,11 @@ export function alterarSessaoRecepcao(
     },
   )
 }
+
+export function buscarListaImpressaoSessao(
+  sessionId,
+) {
+  return apiRequest(
+    `/reception/sessions/${sessionId}/print`,
+  )
+}

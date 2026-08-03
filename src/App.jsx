@@ -18,6 +18,7 @@ import Usuarios from './admin/usuarios/Usuarios.jsx'
 import Relatorios from './admin/relatorios/Relatorios.jsx'
 import Configuracoes from './admin/configuracoes/Configuracoes.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
+import RecepcaoPrint from './admin/recepcao/RecepcaoPrint.jsx'
 
 function PaginaTemporaria({ titulo }) {
   return (
@@ -45,6 +46,15 @@ function App() {
       <Route
         path="/admin/login"
         element={<Login />}
+      />
+
+      <Route
+        path="/admin/recepcao/imprimir/:sessionId"
+        element={
+          <ProtectedRoute>
+            <RecepcaoPrint />
+          </ProtectedRoute>
+        }
       />
 
       <Route

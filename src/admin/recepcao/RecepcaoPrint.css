@@ -1,0 +1,634 @@
+@page {
+  size: A4 landscape;
+  margin: 7mm;
+}
+
+.recepcao-print-page {
+  min-height: 100vh;
+  padding: 24px;
+  background: #eceff2;
+  color: #202020;
+}
+
+.recepcao-print-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+  max-width: 1240px;
+  gap: 10px;
+  margin: 0 auto 16px;
+}
+
+.recepcao-print-toolbar button,
+.recepcao-print-error button {
+  min-height: 42px;
+  padding: 0 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.recepcao-print-back {
+  border: 1px solid #cccccc;
+  background: #ffffff;
+  color: #444444;
+}
+
+.recepcao-print-button {
+  border: 1px solid #b00000;
+  background: #b00000;
+  color: #ffffff;
+}
+
+.recepcao-print-document {
+  width: 100%;
+  max-width: 1240px;
+  min-height: 760px;
+  margin: 0 auto;
+  padding: 27px 30px;
+  background: #ffffff;
+  box-shadow: 0 16px 45px rgba(0, 0, 0, 0.13);
+}
+
+/* CABEÇALHO */
+
+.recepcao-print-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 16px;
+  border-bottom: 3px solid #b00000;
+}
+
+.recepcao-print-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.recepcao-print-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 58px;
+  height: 58px;
+  border-radius: 9px;
+  background: #111111;
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.recepcao-print-brand span,
+.recepcao-print-identification span {
+  display: block;
+  margin-bottom: 4px;
+  color: #b00000;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.recepcao-print-brand strong {
+  color: #181818;
+  font-size: 24px;
+  letter-spacing: -0.35px;
+}
+
+.recepcao-print-identification {
+  min-width: 155px;
+  padding: 11px 14px;
+  border: 1px solid #e0e0e0;
+  border-radius: 9px;
+  text-align: right;
+  background: #fafafa;
+}
+
+.recepcao-print-identification strong {
+  color: #202020;
+  font-size: 15px;
+}
+
+/* DADOS DO EVENTO */
+
+.recepcao-print-event {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 30px;
+  padding: 17px 0;
+  border-bottom: 1px solid #dddddd;
+}
+
+.recepcao-print-event span,
+.recepcao-print-summary span {
+  display: block;
+  margin-bottom: 5px;
+  color: #777777;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.recepcao-print-event h1 {
+  color: #202020;
+  font-size: 25px;
+  letter-spacing: -0.45px;
+}
+
+.recepcao-print-session {
+  display: flex;
+  gap: 14px;
+  text-align: left;
+}
+
+.recepcao-print-session > div {
+  min-width: 125px;
+  padding: 10px 13px;
+  border: 1px solid #dddddd;
+  border-radius: 8px;
+  background: #fafafa;
+}
+
+.recepcao-print-session strong {
+  color: #222222;
+  font-size: 15px;
+}
+
+/* RESUMO */
+
+.recepcao-print-summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  overflow: hidden;
+  margin: 15px 0 18px;
+  border: 1px solid #dddddd;
+  border-radius: 8px;
+}
+
+.recepcao-print-summary > div {
+  padding: 12px 16px;
+  border-right: 1px solid #dddddd;
+}
+
+.recepcao-print-summary > div:last-child {
+  border-right: none;
+}
+
+.recepcao-print-summary strong {
+  font-size: 21px;
+}
+
+/* CABEÇALHO DA LISTA */
+
+.recepcao-print-list-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 10px;
+}
+
+.recepcao-print-list-heading h2 {
+  margin-bottom: 4px;
+  font-size: 18px;
+}
+
+.recepcao-print-list-heading p,
+.recepcao-print-list-heading > span {
+  color: #777777;
+  font-size: 9px;
+}
+
+/* TABELA */
+
+.recepcao-print-list table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.recepcao-print-list th,
+.recepcao-print-list td {
+  padding: 10px 9px;
+  border: 1px solid #bfbfbf;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.recepcao-print-list th {
+  background: #ececec;
+  color: #262626;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.45px;
+  text-transform: uppercase;
+}
+
+.recepcao-print-list td {
+  height: 46px;
+  font-size: 10px;
+}
+
+.recepcao-print-list td strong {
+  display: block;
+  margin-bottom: 3px;
+  color: #202020;
+  font-size: 11px;
+}
+
+.recepcao-print-list td small {
+  color: #666666;
+  font-size: 8px;
+}
+
+.recepcao-print-list tbody tr:nth-child(even) {
+  background: #fafafa;
+}
+
+.recepcao-print-list .col-numero {
+  width: 42px;
+  text-align: center;
+}
+
+.recepcao-print-list .col-origem {
+  width: 78px;
+}
+
+.recepcao-print-list .col-status {
+  width: 110px;
+}
+
+.recepcao-print-list .col-marcacao {
+  width: 72px;
+  text-align: center;
+}
+
+.recepcao-print-list .col-observacao {
+  width: 190px;
+}
+
+.recepcao-print-checkbox {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 1.8px solid #333333;
+  border-radius: 3px;
+  background: #ffffff;
+}
+
+.recepcao-print-empty {
+  padding: 35px !important;
+  text-align: center !important;
+  color: #777777;
+}
+
+/* RODAPÉ */
+
+.recepcao-print-footer {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 30px;
+  margin-top: 24px;
+}
+
+.recepcao-print-footer > div:first-child {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.recepcao-print-footer span {
+  color: #555555;
+  font-size: 11px;
+}
+
+.recepcao-print-footer strong {
+  font-size: 16px;
+}
+
+.recepcao-print-signature {
+  width: 270px;
+  text-align: center;
+}
+
+.recepcao-print-signature span {
+  display: block;
+  border-top: 1px solid #333333;
+}
+
+.recepcao-print-signature p {
+  margin-top: 7px;
+  color: #555555;
+  font-size: 10px;
+}
+
+.recepcao-print-warning {
+  margin-top: 17px;
+  color: #777777;
+  font-size: 8px;
+  line-height: 1.5;
+}
+
+.recepcao-print-loading,
+.recepcao-print-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  flex-direction: column;
+  gap: 12px;
+  padding: 30px;
+  text-align: center;
+  background: #f3f3f3;
+}
+
+.recepcao-print-error h1 {
+  font-size: 22px;
+}
+
+.recepcao-print-error p {
+  color: #777777;
+}
+
+/* IMPRESSÃO */
+
+@media print {
+  html,
+  body {
+    width: 100%;
+    background: #ffffff !important;
+  }
+
+  body {
+    margin: 0;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .recepcao-print-page {
+    min-height: auto;
+    padding: 0;
+    background: #ffffff;
+  }
+
+  .recepcao-print-toolbar {
+    display: none !important;
+  }
+
+  .recepcao-print-document {
+    width: 100%;
+    max-width: none;
+    min-height: auto;
+    margin: 0;
+    padding: 0;
+    box-shadow: none;
+  }
+
+  .recepcao-print-header {
+    padding-bottom: 12px;
+  }
+
+  .recepcao-print-event {
+    padding: 13px 0;
+  }
+
+  .recepcao-print-summary {
+    margin: 12px 0 15px;
+  }
+
+  .recepcao-print-list th,
+  .recepcao-print-list td {
+    padding: 8px 7px;
+  }
+
+  .recepcao-print-list td {
+    height: 42px;
+  }
+
+  .recepcao-print-list tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .recepcao-print-footer {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}
+
+@media screen and (max-width: 900px) {
+  .recepcao-print-page {
+    padding: 15px;
+  }
+
+  .recepcao-print-document {
+    overflow-x: auto;
+    padding: 24px;
+  }
+
+  .recepcao-print-event {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .recepcao-print-session {
+    text-align: left;
+  }
+}
+
+/* =========================================================
+   AJUSTES FINAIS DA LISTA DE IMPRESSÃO
+   ========================================================= */
+
+.recepcao-print-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #111111;
+}
+
+.recepcao-print-logo img {
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+}
+
+.recepcao-print-brand strong {
+  display: block;
+  color: #181818;
+  font-size: 25px;
+  font-weight: 900;
+  letter-spacing: -0.45px;
+}
+
+.recepcao-print-session-card {
+  min-width: 190px;
+  padding: 12px 17px;
+  border: 1px solid #d8d8d8;
+  border-left: 4px solid #b00000;
+  border-radius: 9px;
+  text-align: right;
+  background: #fafafa;
+}
+
+.recepcao-print-session-card span {
+  display: block;
+  margin-bottom: 3px;
+  color: #b00000;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.recepcao-print-session-card strong {
+  display: block;
+  margin-bottom: 2px;
+  color: #181818;
+  font-size: 23px;
+  font-weight: 900;
+}
+
+.recepcao-print-session-card p {
+  margin: 0 0 5px;
+  color: #333333;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.recepcao-print-session-card small {
+  color: #777777;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.recepcao-print-generation {
+  min-width: 180px;
+  text-align: right;
+}
+
+.recepcao-print-generation span {
+  display: block;
+  margin-bottom: 5px;
+  color: #777777;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.recepcao-print-generation strong {
+  color: #222222;
+  font-size: 12px;
+}
+
+/* TABELA MAIS CONFORTÁVEL PARA USO MANUAL */
+
+.recepcao-print-list th,
+.recepcao-print-list td {
+  padding: 11px 9px;
+}
+
+.recepcao-print-list td {
+  height: 50px;
+  font-size: 10px;
+}
+
+.recepcao-print-list td strong {
+  font-size: 11px;
+}
+
+.recepcao-print-list .col-numero {
+  width: 42px;
+}
+
+.recepcao-print-list th:nth-child(2),
+.recepcao-print-list td:nth-child(2) {
+  width: 30%;
+}
+
+.recepcao-print-list th:nth-child(3),
+.recepcao-print-list td:nth-child(3) {
+  width: 15%;
+}
+
+.recepcao-print-list .col-origem {
+  width: 9%;
+}
+
+.recepcao-print-list .col-status {
+  width: 13%;
+}
+
+.recepcao-print-list .col-marcacao {
+  width: 8%;
+  text-align: center;
+}
+
+.recepcao-print-list .col-observacao {
+  width: 21%;
+}
+
+.recepcao-print-checkbox {
+  width: 24px;
+  height: 24px;
+  border: 2px solid #333333;
+  border-radius: 3px;
+}
+
+/* RODAPÉ */
+
+.recepcao-print-footer-info {
+  display: flex;
+  align-items: flex-end;
+  gap: 35px;
+}
+
+.recepcao-print-footer-info > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.recepcao-print-footer-info span {
+  color: #777777;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+
+.recepcao-print-footer-info strong {
+  color: #222222;
+  font-size: 13px;
+}
+
+@media print {
+  .recepcao-print-logo {
+    width: 58px;
+    height: 58px;
+  }
+
+  .recepcao-print-logo img {
+    width: 48px;
+    height: 48px;
+  }
+
+  .recepcao-print-list td {
+    height: 46px;
+  }
+
+  .recepcao-print-checkbox {
+    width: 22px;
+    height: 22px;
+  }
+}

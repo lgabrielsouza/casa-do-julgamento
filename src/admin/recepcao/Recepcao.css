@@ -1261,3 +1261,102 @@
     width: calc(100% - 12px);
   }
 }
+
+/* BOTÃO IMPRIMIR LISTA */
+
+.recepcao-print-tooltip {
+  position: relative;
+  display: inline-flex;
+  width: fit-content;
+  margin-top: 10px;
+}
+
+.recepcao-print-session-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 118px;
+  height: 42px;
+  padding: 0 16px;
+  border: 1px solid #b00000;
+  border-radius: 8px;
+  cursor: pointer;
+  background: #b00000;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  text-decoration: none;
+  transition:
+    background 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    transform 150ms ease;
+}
+
+.recepcao-print-session-button:not(:disabled):hover {
+  border-color: #8f0000;
+  background: #8f0000;
+  box-shadow: 0 8px 18px rgba(176, 0, 0, 0.2);
+  transform: translateY(-1px);
+}
+
+.recepcao-print-session-button:focus-visible {
+  outline: 3px solid rgba(176, 0, 0, 0.18);
+  outline-offset: 2px;
+}
+
+.recepcao-print-session-button:disabled {
+  border-color: #e0b5b5;
+  cursor: not-allowed;
+  background: #d98d8d;
+  color: #ffffff;
+  box-shadow: none;
+  opacity: 0.65;
+  transform: none;
+}
+
+/* TOOLTIP */
+
+.recepcao-print-tooltip-text {
+  position: absolute;
+  z-index: 100;
+  bottom: calc(100% + 9px);
+  left: 50%;
+  width: max-content;
+  max-width: 230px;
+  padding: 8px 10px;
+  border-radius: 7px;
+  pointer-events: none;
+  visibility: hidden;
+  background: #222222;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.4;
+  opacity: 0;
+  transform: translateX(-50%) translateY(4px);
+  transition:
+    opacity 150ms ease,
+    transform 150ms ease,
+    visibility 150ms ease;
+}
+
+.recepcao-print-tooltip-text::after {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  border-width: 5px;
+  border-style: solid;
+  border-color: #222222 transparent transparent;
+  content: '';
+  transform: translateX(-50%);
+}
+
+.recepcao-print-tooltip:hover
+  .recepcao-print-tooltip-text {
+  visibility: visible;
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}

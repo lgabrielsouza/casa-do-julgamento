@@ -1,6 +1,7 @@
 package br.org.casadojulgamento.domain.entity;
 
 import br.org.casadojulgamento.domain.enums.EventStatus;
+import br.org.casadojulgamento.domain.enums.IntegrationProvider;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -8,7 +9,18 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "events")
+@Table(
+        name = "events",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_events_external_provider_event",
+                        columnNames = {
+                                "external_provider",
+                                "external_event_id"
+                        }
+                )
+        }
+)
 @Getter
 @Setter
 @NoArgsConstructor
@@ -48,6 +60,19 @@ public class Event {
     @Column(nullable = false, length = 30)
     private EventStatus status;
 
+    @Enumerated(EnumType.STRING)
+    @Column(
+            name = "external_provider",
+            length = 30
+    )
+    private IntegrationProvider externalProvider;
+
+    @Column(
+            name = "external_event_id",
+            length = 120
+    )
+    private String externalEventId;
+
     @Column(name = "pag_tickets_url", length = 500)
     private String pagTicketsUrl;
 
@@ -58,10 +83,17 @@ public class Event {
     @Column(nullable = false)
     private Long version;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(
+            name = "created_at",
+            nullable = false,
+            updatable = false
+    )
     private LocalDateTime createdAt;
 
-    @Column(name = "updated_at", nullable = false)
+    @Column(
+            name = "updated_at",
+            nullable = false
+    )
     private LocalDateTime updatedAt;
 
     @PrePersist

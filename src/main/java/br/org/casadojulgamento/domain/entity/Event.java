@@ -76,6 +76,39 @@ public class Event {
     @Column(name = "pag_tickets_url", length = 500)
     private String pagTicketsUrl;
 
+    @Column(name = "last_integration_sync_at")
+    private LocalDateTime lastIntegrationSyncAt;
+
+    @Column(
+            name = "last_integration_total_found",
+            nullable = false
+    )
+    private Integer lastIntegrationTotalFound;
+
+    @Column(
+            name = "last_integration_created",
+            nullable = false
+    )
+    private Integer lastIntegrationCreated;
+
+    @Column(
+            name = "last_integration_updated",
+            nullable = false
+    )
+    private Integer lastIntegrationUpdated;
+
+    @Column(
+            name = "last_integration_ignored",
+            nullable = false
+    )
+    private Integer lastIntegrationIgnored;
+
+    @Column(
+            name = "last_integration_errors",
+            nullable = false
+    )
+    private Integer lastIntegrationErrors;
+
     @Column(nullable = false)
     private Boolean active;
 
@@ -105,6 +138,26 @@ public class Event {
 
         if (status == null) {
             status = EventStatus.DRAFT;
+        }
+
+        if (lastIntegrationTotalFound == null) {
+            lastIntegrationTotalFound = 0;
+        }
+
+        if (lastIntegrationCreated == null) {
+            lastIntegrationCreated = 0;
+        }
+
+        if (lastIntegrationUpdated == null) {
+            lastIntegrationUpdated = 0;
+        }
+
+        if (lastIntegrationIgnored == null) {
+            lastIntegrationIgnored = 0;
+        }
+
+        if (lastIntegrationErrors == null) {
+            lastIntegrationErrors = 0;
         }
 
         if (active == null) {

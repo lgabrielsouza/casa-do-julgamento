@@ -1,4 +1,9 @@
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import {
+  NavLink,
+  Outlet,
+  useNavigate,
+} from 'react-router-dom'
+
 import logoCasaJulgamento from '../../main/resources/static/assets/images/logo-cj.png'
 
 import './AdminLayout.css'
@@ -6,7 +11,8 @@ import './AdminLayout.css'
 function AdminLayout() {
   const navigate = useNavigate()
 
-  const usuarioSalvo = localStorage.getItem('cj_usuario')
+  const usuarioSalvo =
+    localStorage.getItem('cj_usuario')
 
   let usuario = {
     nome: 'Usuário',
@@ -22,13 +28,18 @@ function AdminLayout() {
   }
 
   const inicial =
-    usuario.nome?.trim()?.charAt(0)?.toUpperCase() || 'U'
+    usuario.nome
+      ?.trim()
+      ?.charAt(0)
+      ?.toUpperCase() || 'U'
 
   function handleLogout() {
     localStorage.removeItem('cj_token')
     localStorage.removeItem('cj_usuario')
 
-    navigate('/admin/login', { replace: true })
+    navigate('/admin/login', {
+      replace: true,
+    })
   }
 
   return (
@@ -68,12 +79,23 @@ function AdminLayout() {
             Participantes
           </NavLink>
 
-          <NavLink to="/admin/recepcao" className={({ isActive }) => isActive? 'admin-nav-link active': 'admin-nav-link'}>
+          <NavLink
+            to="/admin/recepcao"
+            className={({ isActive }) =>
+              isActive
+                ? 'admin-nav-link active'
+                : 'admin-nav-link'
+            }
+          >
             <span>Recepção</span>
           </NavLink>
 
           <NavLink to="/admin/ingressos">
             Ingressos
+          </NavLink>
+
+          <NavLink to="/admin/sympla">
+            Sympla
           </NavLink>
 
           <p className="sidebar-section-title">
@@ -121,7 +143,9 @@ function AdminLayout() {
               Casa do Julgamento
             </p>
 
-            <strong>Painel Administrativo</strong>
+            <strong>
+              Painel Administrativo
+            </strong>
           </div>
 
           <div className="admin-user">

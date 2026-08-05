@@ -1,0 +1,495 @@
+.sympla-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-width: 1120px;
+  margin: 0 auto;
+}
+
+.sympla-page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.sympla-page-header h1 {
+  margin: 6px 0 8px;
+  color: #151515;
+  font-size: 32px;
+  line-height: 1.1;
+}
+
+.sympla-page-header p {
+  max-width: 660px;
+  margin: 0;
+  color: #737373;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.sympla-eyebrow {
+  color: #bb1d2c;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.sympla-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px solid;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.sympla-status-badge.is-connected {
+  border-color: #bde7ca;
+  background: #ecfbf1;
+  color: #17743a;
+}
+
+.sympla-status-badge.is-disconnected {
+  border-color: #f0c5ca;
+  background: #fff1f2;
+  color: #a71927;
+}
+
+.sympla-status-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 0 4px
+    rgba(23, 116, 58, 0.1);
+}
+
+.sympla-card,
+.sympla-result-card,
+.sympla-progress-card {
+  border: 1px solid #e8e8e8;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 12px 35px
+    rgba(20, 20, 20, 0.06);
+}
+
+.sympla-card {
+  overflow: hidden;
+}
+
+.sympla-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 24px 28px;
+  border-bottom: 1px solid #ededed;
+  background:
+    linear-gradient(
+      135deg,
+      #ffffff 0%,
+      #faf7f7 100%
+    );
+}
+
+.sympla-provider {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.sympla-provider-logo {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: #bb1d2c;
+  color: #ffffff;
+  font-size: 24px;
+  font-weight: 900;
+  box-shadow: 0 10px 24px
+    rgba(187, 29, 44, 0.22);
+}
+
+.sympla-provider span {
+  display: block;
+  margin-bottom: 3px;
+  color: #888888;
+  font-size: 12px;
+}
+
+.sympla-provider strong {
+  color: #161616;
+  font-size: 19px;
+}
+
+.sympla-sync-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 44px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 10px;
+  background: #bb1d2c;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.sympla-sync-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: #a71927;
+  box-shadow: 0 10px 22px
+    rgba(187, 29, 44, 0.22);
+}
+
+.sympla-sync-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.sympla-info-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  padding: 28px;
+}
+
+.sympla-info-item {
+  min-height: 112px;
+  padding: 18px;
+  border: 1px solid #eeeeee;
+  border-radius: 13px;
+  background: #fafafa;
+}
+
+.sympla-info-item span {
+  display: block;
+  margin-bottom: 12px;
+  color: #818181;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.sympla-info-item strong {
+  display: block;
+  color: #1d1d1d;
+  font-size: 17px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.sympla-info-item.sympla-info-highlight {
+  border-color: #eed2d6;
+  background: #fff7f8;
+}
+
+.sympla-info-highlight strong {
+  color: #bb1d2c;
+  font-size: 34px;
+}
+
+.sympla-code {
+  font-family:
+    Consolas,
+    Monaco,
+    monospace;
+  font-size: 15px !important;
+}
+
+.sympla-explanation {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 0 28px 28px;
+  padding: 16px;
+  border-radius: 12px;
+  background: #f7f7f7;
+}
+
+.sympla-explanation-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 25px;
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  background: #222222;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.sympla-explanation p {
+  margin: 1px 0 0;
+  color: #676767;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.sympla-alert {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 15px 17px;
+  border-radius: 11px;
+  font-size: 13px;
+}
+
+.sympla-alert-error {
+  border: 1px solid #f2c6ca;
+  background: #fff3f4;
+  color: #9d1b27;
+}
+
+.sympla-alert span {
+  flex: 1;
+}
+
+.sympla-alert button {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.sympla-progress-card {
+  padding: 22px 26px;
+}
+
+.sympla-progress-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.sympla-progress-header strong,
+.sympla-progress-header span {
+  display: block;
+}
+
+.sympla-progress-header strong {
+  margin-bottom: 5px;
+  color: #202020;
+}
+
+.sympla-progress-header span {
+  color: #7c7c7c;
+  font-size: 13px;
+}
+
+.sympla-progress-pulse {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: #bb1d2c;
+  animation: sympla-pulse 1s infinite;
+}
+
+.sympla-progress-bar {
+  height: 7px;
+  margin-top: 18px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #eeeeee;
+}
+
+.sympla-progress-bar span {
+  display: block;
+  width: 42%;
+  height: 100%;
+  border-radius: inherit;
+  background: #bb1d2c;
+  animation: sympla-progress 1.2s
+    ease-in-out infinite;
+}
+
+.sympla-result-card {
+  padding: 26px;
+}
+
+.sympla-result-card header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.sympla-result-card h2 {
+  margin: 0 0 5px;
+  color: #1f1f1f;
+  font-size: 20px;
+}
+
+.sympla-result-card p {
+  margin: 0;
+  color: #777777;
+  font-size: 13px;
+}
+
+.sympla-success-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 42px;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #e7f8ed;
+  color: #18733b;
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.sympla-result-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 24px;
+}
+
+.sympla-result-grid article {
+  padding: 18px;
+  border: 1px solid #ededed;
+  border-radius: 12px;
+  background: #fafafa;
+}
+
+.sympla-result-grid span {
+  display: block;
+  margin-bottom: 8px;
+  color: #7b7b7b;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.sympla-result-grid strong {
+  color: #202020;
+  font-size: 28px;
+}
+
+.sympla-result-grid article.has-error {
+  border-color: #f0c4c9;
+  background: #fff3f4;
+}
+
+.sympla-result-grid article.has-error strong {
+  color: #b01d2b;
+}
+
+.sympla-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 350px;
+  gap: 14px;
+  color: #777777;
+}
+
+.sympla-spinner,
+.sympla-button-spinner {
+  border-radius: 50%;
+  animation: sympla-spin 0.8s
+    linear infinite;
+}
+
+.sympla-spinner {
+  width: 34px;
+  height: 34px;
+  border: 3px solid #eeeeee;
+  border-top-color: #bb1d2c;
+}
+
+.sympla-button-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid
+    rgba(255, 255, 255, 0.45);
+  border-top-color: #ffffff;
+}
+
+@keyframes sympla-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes sympla-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0
+      rgba(187, 29, 44, 0.3);
+  }
+
+  50% {
+    box-shadow: 0 0 0 8px
+      rgba(187, 29, 44, 0);
+  }
+}
+
+@keyframes sympla-progress {
+  from {
+    transform: translateX(-110%);
+  }
+
+  to {
+    transform: translateX(250%);
+  }
+}
+
+@media (max-width: 960px) {
+  .sympla-info-grid,
+  .sympla-result-grid {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .sympla-page-header,
+  .sympla-card-top {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .sympla-status-badge {
+    align-self: flex-start;
+  }
+
+  .sympla-sync-button {
+    width: 100%;
+  }
+
+  .sympla-info-grid,
+  .sympla-result-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .sympla-card-top,
+  .sympla-info-grid,
+  .sympla-result-card {
+    padding: 20px;
+  }
+
+  .sympla-explanation {
+    margin: 0 20px 20px;
+  }
+}

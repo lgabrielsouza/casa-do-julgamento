@@ -11,6 +11,9 @@ public record SymplaParticipantResponse(
         @JsonProperty("event_id")
         String eventId,
 
+        @JsonProperty("presentation_id")
+        String presentationId,
+
         @JsonProperty("order_id")
         String orderId,
 
@@ -39,9 +42,6 @@ public record SymplaParticipantResponse(
 ) {
 
     public String fullName() {
-
         return (firstName + " " + lastName).trim();
-
     }
-
 }

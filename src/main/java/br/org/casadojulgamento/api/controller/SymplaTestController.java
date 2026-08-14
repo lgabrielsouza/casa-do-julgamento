@@ -28,4 +28,14 @@ public class SymplaTestController {
                 externalEventId
         );
     }
+
+    @GetMapping("/events/{externalEventId}/presentations")
+    public JsonNode buscarApresentacoes(
+            @PathVariable String externalEventId
+    ) {
+        return symplaClient.buscarApresentacoes(
+                externalEventId
+        );
+    }
+
 }

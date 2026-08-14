@@ -280,6 +280,58 @@ public class SymplaClient {
         );
     }
 
+        public JsonNode buscarApresentacoes(
+                String externalEventId
+        ) {
+        validarTokenConfigurado();
+        validarExternalEventId(externalEventId);
+
+        try {
+                return symplaRestClient
+                        .get()
+                        .uri(uriBuilder ->
+                                uriBuilder
+                                        .path(
+                                                "/v1.6.0/events/{eventId}/presentations"
+                                        )
+                                        .queryParam(
+                                                "page_size",
+                                                DEFAULT_PAGE_SIZE
+                                        )
+                                        .build(externalEventId)
+                        )
+                        .header(
+                                "s_token",
+                                properties.token()
+                        )
+                        .retrieve()
+                        .onStatus(
+                                HttpStatusCode::isError,
+                                (request, response) -> {
+                                throw criarExcecaoApi(
+                                        response
+                                                .getStatusCode()
+                                                .value(),
+                                        response
+                                                .getBody()
+                                                .readAllBytes()
+                                );
+                                }
+                        )
+                        .body(JsonNode.class);
+
+        } catch (SymplaApiException exception) {
+                throw exception;
+
+        } catch (RestClientException exception) {
+                throw new SymplaApiException(
+                        "Não foi possível buscar as apresentações do evento na Sympla.",
+                        503,
+                        exception
+                );
+        }
+        }
+
     private void validarTokenConfigurado() {
         if (!properties.hasToken()) {
             throw new SymplaApiException(

@@ -17,13 +17,12 @@ public interface EventSessionRepository
             LocalTime startTime
     );
 
-    boolean existsByEventIdAndDateAndStartTimeAndActiveTrueAndIdNot(
-            Long eventId,
-            LocalDate date,
-            LocalTime startTime,
-            Long id
-    );
-
+        boolean existsByEventIdAndDateAndStartTimeAndActiveTrueAndIdNot(
+                Long eventId,
+                LocalDate date,
+                LocalTime startTime,
+                Long id
+        );
     List<EventSession> findAllByEventIdAndDateBetweenAndActiveTrue(
         Long eventId,
         LocalDate startDate,

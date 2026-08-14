@@ -300,11 +300,11 @@ public class SymplaParticipantMapper {
         return nome;
     }
 
-    private String normalizarTexto(
-            String valor
-    ) {
+        private String normalizarTexto(
+                String valor
+        ) {
         if (valor == null) {
-            return null;
+                return null;
         }
 
         String normalizado = valor.trim();
@@ -312,5 +312,5 @@ public class SymplaParticipantMapper {
         return normalizado.isEmpty()
                 ? null
                 : normalizado;
-    }
+        }
 }

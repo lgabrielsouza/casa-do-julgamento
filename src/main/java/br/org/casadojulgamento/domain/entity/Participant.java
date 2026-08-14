@@ -71,6 +71,11 @@ public class Participant {
     @JoinColumn(name = "event_session_id")
     private EventSession eventSession;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "original_event_session_id")
+    private EventSession originalEventSession;
+
+
     @Column(
             name = "full_name",
             nullable = false,

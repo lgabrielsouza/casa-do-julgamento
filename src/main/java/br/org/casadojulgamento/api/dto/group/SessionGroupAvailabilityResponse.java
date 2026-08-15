@@ -1,6 +1,7 @@
 package br.org.casadojulgamento.api.dto.group;
 
 import br.org.casadojulgamento.domain.enums.EventSessionStatus;
+import br.org.casadojulgamento.domain.enums.ParticipantGroupStatus;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -19,7 +20,9 @@ public record SessionGroupAvailabilityResponse(
 
         long available,
 
-        EventSessionStatus status
+        EventSessionStatus status,
+
+        ParticipantGroupStatus groupStatus
 
 ) {
 }

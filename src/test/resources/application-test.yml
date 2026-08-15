@@ -1,0 +1,19 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:casa_do_julgamento_test;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    open-in-view: false
+
+  flyway:
+    enabled: false
+
+security:
+  jwt:
+    secret: teste-casa-do-julgamento-chave-jwt-segura-123456789
+    expiration-ms: 86400000

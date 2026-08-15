@@ -12,6 +12,7 @@ import { listarSessoes } from '../../services/sessionService'
 import {
   alocarParticipanteNaSessao,
   desfazerChegada,
+  liberarGrupo,
   listarParticipantesRecepcao,
   listarSessoesParaGrupos,
   marcarProntoParaGrupo,
@@ -466,15 +467,27 @@ function Recepcao() {
       participanteSelecionado.eventSessionId,
     ) === String(sessaoGrupoDestinoId)
 
-  const podeAlocar =
-    participantePronto &&
-    sessaoGrupoDestinoId &&
-    destinoSelecionado &&
-    (
-      destinoSelecionado.available > 0 ||
-      mesmaSessao
-    ) &&
-    destinoSelecionado.status !== 'CANCELLED'
+const grupoAtualLiberado =
+  disponibilidadeSessaoAtual?.groupStatus ===
+  'RELEASED'
+
+const grupoAtualCancelado =
+  disponibilidadeSessaoAtual?.groupStatus ===
+  'CANCELLED'
+
+const podeAlocar =
+  participantePronto &&
+  !grupoAtualLiberado &&
+  !grupoAtualCancelado &&
+  sessaoGrupoDestinoId &&
+  destinoSelecionado &&
+  (
+    destinoSelecionado.available > 0 ||
+    mesmaSessao
+  ) &&
+  destinoSelecionado.status !== 'CANCELLED' &&
+  destinoSelecionado.groupStatus !== 'RELEASED' &&
+  destinoSelecionado.groupStatus !== 'CANCELLED'
 
   useEffect(() => {
     carregarEventos()
@@ -838,6 +851,47 @@ function Recepcao() {
       setProcessando(false)
     }
   }
+
+  async function liberarGrupoSelecionado() {
+  if (
+    !participanteSelecionado?.eventSessionId ||
+    disponibilidadeSessaoAtual?.groupStatus === 'RELEASED' ||
+    disponibilidadeSessaoAtual?.groupStatus === 'CANCELLED'
+  ) {
+    return
+  }
+
+  const participanteAtual =
+    participanteSelecionado
+
+  setProcessando(true)
+  setErro('')
+
+  try {
+    await liberarGrupo(
+      participanteAtual.eventSessionId,
+    )
+
+    setSucesso('Grupo liberado com sucesso.')
+
+    await recarregarMantendoParticipante(
+      eventoSelecionadoId,
+      participanteAtual.id,
+    )
+  } catch (error) {
+    setErro(
+      error.message ||
+        'Não foi possível liberar o grupo.',
+    )
+
+    await recarregarMantendoParticipante(
+      eventoSelecionadoId,
+      participanteAtual.id,
+    )
+  } finally {
+    setProcessando(false)
+  }
+}
 
   return (
     <div className="recepcao-page">
@@ -1259,23 +1313,27 @@ function Recepcao() {
                             ) ===
                             String(sessao.sessionId)
 
-                          const lotada =
-                            sessao.available <= 0 &&
-                            !atual
+                            const lotada =
+                              sessao.available <= 0 &&
+                              !atual
 
-                          const cancelada =
-                            sessao.status ===
-                            'CANCELLED'
+                            const cancelada =
+                              sessao.status === 'CANCELLED' ||
+                              sessao.groupStatus === 'CANCELLED'
 
-                          return (
-                            <option
-                              key={sessao.sessionId}
-                              value={sessao.sessionId}
-                              disabled={
-                                lotada ||
-                                cancelada
-                              }
-                            >
+                            const liberada =
+                              sessao.groupStatus === 'RELEASED'
+
+                            return (
+                              <option
+                                key={sessao.sessionId}
+                                value={sessao.sessionId}
+                                disabled={
+                                  lotada ||
+                                  cancelada ||
+                                  liberada
+                                }
+                              >
                               {formatarHorario(
                                 sessao.startTime,
                               )}
@@ -1286,6 +1344,9 @@ function Recepcao() {
                               {lotada
                                 ? 'LOTADO'
                                 : `${sessao.available} vagas`}
+                              {' — '}
+                              {sessao.groupStatus}
+
                               {atual
                                 ? ' — ATUAL'
                                 : ''}
@@ -1387,6 +1448,22 @@ function Recepcao() {
                   >
                     Pronto para grupo
                   </button>
+                    <button
+                      type="button"
+                      className="recepcao-action pronto"
+                      onClick={liberarGrupoSelecionado}
+                      disabled={
+                        processando ||
+                        !participanteSelecionado.eventSessionId ||
+                        disponibilidadeSessaoAtual?.occupancy <= 0 ||
+                        disponibilidadeSessaoAtual?.groupStatus === 'RELEASED' ||
+                        disponibilidadeSessaoAtual?.groupStatus === 'CANCELLED'
+                      }
+                    >
+                      {disponibilidadeSessaoAtual?.groupStatus === 'RELEASED'
+                        ? 'Grupo liberado'
+                        : 'Liberar grupo'}
+                    </button>
 
                   <button
                     type="button"

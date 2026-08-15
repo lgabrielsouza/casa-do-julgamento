@@ -60,4 +60,13 @@ public class ParticipantGroupController {
                 );
     }
 
+    @PostMapping("/sessions/{sessionId}/release")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void liberarGrupo(
+            @PathVariable Long sessionId
+    ) {
+        participantGroupService
+                .liberarGrupo(sessionId);
+    }
+
 }

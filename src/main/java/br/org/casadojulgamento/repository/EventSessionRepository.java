@@ -6,6 +6,12 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import java.util.List;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import jakarta.persistence.LockModeType;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import java.util.Optional;
 
 public interface EventSessionRepository
         extends JpaRepository<EventSession, Long>,
@@ -34,4 +40,14 @@ public interface EventSessionRepository
                 Long eventId
         );
 
+
+        @Lock(LockModeType.PESSIMISTIC_WRITE)
+        @Query("""
+                select es
+                from EventSession es
+                where es.id = :id
+                """)
+        Optional<EventSession> findByIdForUpdate(
+                @Param("id") Long id
+        );     
 }

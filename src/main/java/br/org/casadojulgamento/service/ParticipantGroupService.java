@@ -1,5 +1,6 @@
 package br.org.casadojulgamento.service;
 
+import br.org.casadojulgamento.api.dto.group.SessionGroupAvailabilityResponse;
 import br.org.casadojulgamento.domain.entity.EventSession;
 import br.org.casadojulgamento.domain.entity.Participant;
 import br.org.casadojulgamento.domain.entity.ParticipantGroup;
@@ -16,20 +17,27 @@ import br.org.casadojulgamento.repository.ParticipantRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import br.org.casadojulgamento.api.dto.group.SessionGroupAvailabilityResponse;
-
-import java.util.List;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class ParticipantGroupService {
 
     private final EventSessionRepository eventSessionRepository;
+
     private final ParticipantRepository participantRepository;
+
     private final ParticipantGroupRepository groupRepository;
+
     private final ParticipantGroupMemberRepository memberRepository;
+
+    /*
+     * =========================================================
+     * GRUPO DA SESSÃO
+     * =========================================================
+     */
 
     @Transactional
     public ParticipantGroup garantirGrupoDaSessao(
@@ -52,6 +60,12 @@ public class ParticipantGroupService {
                         )
                 );
     }
+
+    /*
+     * =========================================================
+     * OCUPAÇÃO E VAGAS
+     * =========================================================
+     */
 
     @Transactional(readOnly = true)
     public long buscarOcupacao(
@@ -84,8 +98,60 @@ public class ParticipantGroupService {
         );
     }
 
+    @Transactional
+        public List<SessionGroupAvailabilityResponse>
+        buscarDisponibilidadeDasSessoes(
+                Long eventId
+        ) {
+        List<EventSession> sessions =
+                eventSessionRepository
+                        .findAllByEventIdAndActiveTrueOrderByDateAscStartTimeAsc(
+                                eventId
+                        );
+
+        return sessions.stream()
+                .map(session -> {
+
+                        long occupancy =
+                                participantRepository
+                                        .countByEventSessionIdAndActiveTrue(
+                                                session.getId()
+                                        );
+
+                        long available =
+                                Math.max(
+                                        session.getCapacity()
+                                                - occupancy,
+                                        0
+                                );
+
+                        ParticipantGroup group =
+                                garantirGrupoDaSessao(
+                                        session.getId()
+                                );
+
+                        ParticipantGroupStatus groupStatus =
+                                group.getStatus();
+
+                        return new SessionGroupAvailabilityResponse(
+                                session.getId(),
+                                session.getDate(),
+                                session.getStartTime(),
+                                session.getCapacity(),
+                                occupancy,
+                                available,
+                                session.getStatus(),
+                                groupStatus
+                        );
+                })
+                .toList();
+        }
     /*
-     * Serve para os dois cenários:
+     * =========================================================
+     * ALOCAÇÃO / MOVIMENTAÇÃO
+     * =========================================================
+     *
+     * O mesmo método atende:
      *
      * 1. Participante sem sessão:
      *    recebe sua primeira sessão operacional.
@@ -95,6 +161,7 @@ public class ParticipantGroupService {
      *
      * originalEventSession nunca é alterada aqui.
      */
+
     @Transactional
     public void alocarParticipanteNaSessao(
             Long participantId,
@@ -108,13 +175,26 @@ public class ParticipantGroupService {
         );
 
         EventSession destinationSession =
-                buscarSessao(destinationSessionId);
+                eventSessionRepository
+                        .findByIdForUpdate(
+                                destinationSessionId
+                        )
+                        .orElseThrow(
+                                () ->
+                                        new ResourceNotFoundException(
+                                                "Sessão não encontrada."
+                                        )
+                        );
 
         validarMesmoEvento(
                 participant,
                 destinationSession
         );
 
+        /*
+         * Se já estiver nesta sessão, apenas garantimos
+         * que existe o vínculo operacional com o grupo.
+         */
         if (
                 participant.getEventSession() != null
                         && participant
@@ -130,8 +210,22 @@ public class ParticipantGroupService {
             return;
         }
 
+        /*
+         * Antes de alterar qualquer vínculo,
+         * verificamos se existe vaga real.
+         */
+        ParticipantGroup destinationGroup =
+                garantirGrupoDaSessao(
+                        destinationSessionId
+                );
+
+        validarGrupoDisponivelParaEntrada(
+                destinationGroup
+        );
+
         validarVaga(
-                destinationSession
+                destinationSession,
+                destinationGroup
         );
 
         ParticipantGroupMember currentMembership =
@@ -144,24 +238,40 @@ public class ParticipantGroupService {
         ParticipantGroup sourceGroup = null;
 
         if (currentMembership != null) {
+
             sourceGroup =
                     currentMembership.getGroup();
 
+            /*
+             * Depois que um grupo foi liberado,
+             * seus integrantes não podem mais ser movidos.
+             */
+            validarGrupoDisponivelParaSaida(
+                    sourceGroup
+            );
+
             currentMembership.setActive(false);
+
             currentMembership.setRemovedAt(
                     LocalDateTime.now()
             );
 
+            /*
+             * O flush é necessário antes da criação
+             * do novo vínculo devido ao índice único
+             * de participante ativo em grupo.
+             */
             memberRepository.saveAndFlush(
                     currentMembership
             );
         }
 
         /*
-         * Altera somente a sessão operacional atual.
+         * Altera somente a sessão operacional.
          *
          * originalEventSession representa a origem
-         * confiável da reserva/compra e não é modificada.
+         * confiável da reserva/compra e permanece
+         * inalterada.
          */
         participant.setEventSession(
                 destinationSession
@@ -170,11 +280,6 @@ public class ParticipantGroupService {
         participantRepository.save(
                 participant
         );
-
-        ParticipantGroup destinationGroup =
-                garantirGrupoDaSessao(
-                        destinationSessionId
-                );
 
         ParticipantGroupMember newMembership =
                 ParticipantGroupMember.builder()
@@ -201,23 +306,108 @@ public class ParticipantGroupService {
         );
     }
 
+    /*
+     * =========================================================
+     * LIBERAÇÃO DO GRUPO
+     * =========================================================
+     */
+
+    @Transactional
+    public void liberarGrupo(
+            Long eventSessionId
+    ) {
+        ParticipantGroup group =
+                groupRepository
+                        .findByEventSessionIdAndActiveTrue(
+                                eventSessionId
+                        )
+                        .orElseThrow(
+                                () ->
+                                        new ResourceNotFoundException(
+                                                "Grupo da sessão não encontrado."
+                                        )
+                        );
+
+        if (
+                group.getStatus()
+                        == ParticipantGroupStatus.RELEASED
+        ) {
+            throw new BusinessException(
+                    "O grupo já foi liberado."
+            );
+        }
+
+        if (
+                group.getStatus()
+                        == ParticipantGroupStatus.CANCELLED
+        ) {
+            throw new BusinessException(
+                    "Um grupo cancelado não pode ser liberado."
+            );
+        }
+
+                long ocupacao =
+                        memberRepository
+                                .countByGroupIdAndActiveTrue(
+                                        group.getId()
+                                );
+
+        /*
+         * Permitimos liberar com menos de 30,
+         * mas nunca um grupo vazio.
+         */
+        if (ocupacao <= 0) {
+            throw new BusinessException(
+                    "Não é possível liberar um grupo vazio."
+            );
+        }
+
+        group.setStatus(
+                ParticipantGroupStatus.RELEASED
+        );
+
+        group.setReleasedAt(
+                LocalDateTime.now()
+        );
+
+        groupRepository.saveAndFlush(
+                group
+        );
+    }
+
+    /*
+     * =========================================================
+     * VÍNCULO COM GRUPO
+     * =========================================================
+     */
+
     private void garantirVinculoComGrupo(
             Participant participant,
             EventSession session
     ) {
-        if (
+        ParticipantGroupMember membershipAtual =
                 memberRepository
-                        .existsByParticipantIdAndActiveTrue(
+                        .findByParticipantIdAndActiveTrue(
                                 participant.getId()
                         )
-        ) {
-            return;
+                        .orElse(null);
+
+        if (membershipAtual != null) {
+        atualizarStatusDoGrupo(
+                membershipAtual.getGroup()
+        );
+
+        return;
         }
 
         ParticipantGroup group =
                 garantirGrupoDaSessao(
                         session.getId()
                 );
+
+        validarGrupoDisponivelParaEntrada(
+                group
+        );
 
         ParticipantGroupMember member =
                 ParticipantGroupMember.builder()
@@ -229,33 +419,113 @@ public class ParticipantGroupService {
                         .active(true)
                         .build();
 
-        memberRepository.save(member);
+        memberRepository.save(
+                member
+        );
 
-        atualizarStatusDoGrupo(group);
+        atualizarStatusDoGrupo(
+                group
+        );
     }
 
-    private void validarVaga(
-            EventSession destinationSession
+    /*
+     * =========================================================
+     * VALIDAÇÕES DE GRUPO
+     * =========================================================
+     */
+
+    private void validarGrupoDisponivelParaEntrada(
+            ParticipantGroup group
     ) {
+        if (
+                group.getStatus()
+                        == ParticipantGroupStatus.RELEASED
+        ) {
+            throw new BusinessException(
+                    "Este grupo já foi liberado e não aceita novos participantes."
+            );
+        }
+
+        if (
+                group.getStatus()
+                        == ParticipantGroupStatus.CANCELLED
+        ) {
+            throw new BusinessException(
+                    "Este grupo está cancelado."
+            );
+        }
+
+        if (
+                !Boolean.TRUE.equals(
+                        group.getActive()
+                )
+        ) {
+            throw new BusinessException(
+                    "Este grupo está inativo."
+            );
+        }
+    }
+
+    private void validarGrupoDisponivelParaSaida(
+            ParticipantGroup group
+    ) {
+        if (
+                group.getStatus()
+                        == ParticipantGroupStatus.RELEASED
+        ) {
+            throw new BusinessException(
+                    "Não é possível mover participantes de um grupo já liberado."
+            );
+        }
+
+        if (
+                group.getStatus()
+                        == ParticipantGroupStatus.CANCELLED
+        ) {
+            throw new BusinessException(
+                    "Não é possível mover participantes de um grupo cancelado."
+            );
+        }
+    }
+
+    /*
+     * =========================================================
+     * CAPACIDADE
+     * =========================================================
+     */
+
+        private void validarVaga(
+                EventSession destinationSession,
+                ParticipantGroup destinationGroup
+        ) {
         long ocupacao =
-                participantRepository
-                        .countByEventSessionIdAndActiveTrue(
-                                destinationSession.getId()
+                memberRepository
+                        .countByGroupIdAndActiveTrue(
+                                destinationGroup.getId()
                         );
 
         if (
                 ocupacao
                         >= destinationSession.getCapacity()
         ) {
-            throw new BusinessException(
-                    "A sessão de destino está lotada."
-            );
+                throw new BusinessException(
+                        "A sessão de destino está lotada."
+                );
         }
-    }
+        }
+
+    /*
+     * =========================================================
+     * STATUS DO GRUPO
+     * =========================================================
+     */
 
     private void atualizarStatusDoGrupo(
             ParticipantGroup group
     ) {
+        /*
+         * RELEASED e CANCELLED são estados finais.
+         */
         if (
                 group.getStatus()
                         == ParticipantGroupStatus.RELEASED
@@ -269,9 +539,9 @@ public class ParticipantGroupService {
                 group.getEventSession();
 
         long ocupacao =
-                participantRepository
-                        .countByEventSessionIdAndActiveTrue(
-                                session.getId()
+                memberRepository
+                        .countByGroupIdAndActiveTrue(
+                                group.getId()
                         );
 
         ParticipantGroupStatus novoStatus =
@@ -283,11 +553,21 @@ public class ParticipantGroupService {
                 group.getStatus()
                         != novoStatus
         ) {
-            group.setStatus(novoStatus);
+            group.setStatus(
+                    novoStatus
+            );
 
-            groupRepository.save(group);
+            groupRepository.save(
+                    group
+            );
         }
     }
+
+    /*
+     * =========================================================
+     * VALIDAÇÕES DE PARTICIPANTE
+     * =========================================================
+     */
 
     private void validarParticipanteParaAlocacao(
             Participant participant
@@ -343,12 +623,20 @@ public class ParticipantGroupService {
         }
     }
 
+    /*
+     * =========================================================
+     * BUSCAS
+     * =========================================================
+     */
+
     private EventSession buscarSessao(
             Long eventSessionId
     ) {
         EventSession session =
                 eventSessionRepository
-                        .findById(eventSessionId)
+                        .findById(
+                                eventSessionId
+                        )
                         .orElseThrow(
                                 () ->
                                         new ResourceNotFoundException(
@@ -373,7 +661,9 @@ public class ParticipantGroupService {
             Long participantId
     ) {
         return participantRepository
-                .findById(participantId)
+                .findById(
+                        participantId
+                )
                 .orElseThrow(
                         () ->
                                 new ResourceNotFoundException(
@@ -381,44 +671,4 @@ public class ParticipantGroupService {
                                 )
                 );
     }
-
-    @Transactional(readOnly = true)
-    public List<SessionGroupAvailabilityResponse>
-    buscarDisponibilidadeDasSessoes(
-            Long eventId
-    ) {
-        List<EventSession> sessions =
-                eventSessionRepository
-                        .findAllByEventIdAndActiveTrueOrderByDateAscStartTimeAsc(
-                                eventId
-                        );
-
-        return sessions.stream()
-                .map(session -> {
-                    long occupancy =
-                            participantRepository
-                                    .countByEventSessionIdAndActiveTrue(
-                                            session.getId()
-                                    );
-
-                    long available =
-                            Math.max(
-                                    session.getCapacity()
-                                            - occupancy,
-                                    0
-                            );
-
-                    return new SessionGroupAvailabilityResponse(
-                            session.getId(),
-                            session.getDate(),
-                            session.getStartTime(),
-                            session.getCapacity(),
-                            occupancy,
-                            available,
-                            session.getStatus()
-                    );
-                })
-                .toList();
-    }
-
 }

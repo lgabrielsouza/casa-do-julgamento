@@ -147,3 +147,14 @@ export function alocarParticipanteNaSessao(
     },
   )
 }
+
+export function liberarGrupo(
+  sessionId,
+) {
+  return apiRequest(
+    `/groups/sessions/${sessionId}/release`,
+    {
+      method: 'POST',
+    },
+  )
+}

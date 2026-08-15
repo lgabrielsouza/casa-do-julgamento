@@ -19,6 +19,8 @@ import {
   registrarChegada,
 } from '../../services/receptionService'
 
+import RecepcaoTabs from './RecepcaoTabs'
+
 import './Recepcao.css'
 
 const STATUS_CONFIG = {
@@ -900,7 +902,8 @@ const podeAlocar =
         mensagem={sucesso}
         visivel={Boolean(sucesso)}
       />
-
+    <RecepcaoTabs />
+    
       <header className="recepcao-page-header">
         <div>
           <p className="recepcao-eyebrow">

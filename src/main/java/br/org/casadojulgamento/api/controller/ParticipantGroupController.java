@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import br.org.casadojulgamento.api.dto.group.SessionGroupAvailabilityResponse;
-
+import br.org.casadojulgamento.api.dto.group.ParticipantGroupMemberResponse;
 import java.util.List;
 import java.util.Map;
 
@@ -68,5 +68,17 @@ public class ParticipantGroupController {
         participantGroupService
                 .liberarGrupo(sessionId);
     }
+
+    @GetMapping("/sessions/{sessionId}/members")
+        public List<ParticipantGroupMemberResponse>
+        buscarMembrosDaSessao(
+                @PathVariable Long sessionId
+        ) {
+        return participantGroupService
+                .buscarMembrosDaSessao(
+                        sessionId
+                );
+        }
+
 
 }

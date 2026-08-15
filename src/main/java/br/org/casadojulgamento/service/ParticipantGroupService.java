@@ -17,7 +17,7 @@ import br.org.casadojulgamento.repository.ParticipantRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import br.org.casadojulgamento.api.dto.group.ParticipantGroupMemberResponse;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -671,4 +671,44 @@ public class ParticipantGroupService {
                                 )
                 );
     }
+
+    @Transactional(readOnly = true)
+        public List<ParticipantGroupMemberResponse>
+        buscarMembrosDaSessao(
+                Long eventSessionId
+        ) {
+        ParticipantGroup group =
+                groupRepository
+                        .findByEventSessionIdAndActiveTrue(
+                                eventSessionId
+                        )
+                        .orElseThrow(
+                                () ->
+                                        new ResourceNotFoundException(
+                                                "Grupo da sessão não encontrado."
+                                        )
+                        );
+
+        return memberRepository
+                .findAllByGroupIdAndActiveTrueOrderByJoinedAtAsc(
+                        group.getId()
+                )
+                .stream()
+                .map(member -> {
+
+                        Participant participant =
+                                member.getParticipant();
+
+                        return new ParticipantGroupMemberResponse(
+                                participant.getId(),
+                                participant.getFullName(),
+                                participant.getPhone(),
+                                participant.getEmail(),
+                                participant.getArrivalStatus(),
+                                member.getJoinedAt()
+                        );
+                })
+                .toList();
+        }
+
 }

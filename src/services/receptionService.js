@@ -158,3 +158,11 @@ export function liberarGrupo(
     },
   )
 }
+
+export function listarMembrosDoGrupo(
+  sessionId,
+) {
+  return apiRequest(
+    `/groups/sessions/${sessionId}/members`,
+  )
+}

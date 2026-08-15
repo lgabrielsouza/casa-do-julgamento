@@ -20,6 +20,7 @@ import Relatorios from './admin/relatorios/Relatorios.jsx'
 import Configuracoes from './admin/configuracoes/Configuracoes.jsx'
 import Sympla from './admin/sympla/Sympla.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
+import RecepcaoGrupos from './admin/recepcao/RecepcaoGrupos.jsx'
 
 function App() {
   return (
@@ -90,6 +91,11 @@ function App() {
           path="recepcao"
           element={<Recepcao />}
         />
+
+        <Route
+          path="recepcao/grupos"
+          element={<RecepcaoGrupos />}
+        />   
 
         <Route
           path="ingressos"

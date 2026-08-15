@@ -28,4 +28,10 @@ public interface EventSessionRepository
         LocalDate startDate,
         LocalDate endDate
     );
+
+    List<EventSession>
+        findAllByEventIdAndActiveTrueOrderByDateAscStartTimeAsc(
+                Long eventId
+        );
+
 }

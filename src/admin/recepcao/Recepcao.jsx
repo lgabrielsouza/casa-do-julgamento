@@ -10,9 +10,10 @@ import Toast from '../../components/ui/Toast'
 import { listarEventos } from '../../services/eventService'
 import { listarSessoes } from '../../services/sessionService'
 import {
-  alterarSessaoRecepcao,
+  alocarParticipanteNaSessao,
   desfazerChegada,
   listarParticipantesRecepcao,
+  listarSessoesParaGrupos,
   marcarProntoParaGrupo,
   registrarChegada,
 } from '../../services/receptionService'
@@ -91,6 +92,7 @@ function ParticipanteItem({
   participante,
   selecionado,
   sessao,
+  disponibilidade,
   onSelecionar,
 }) {
   const status =
@@ -127,6 +129,13 @@ function ParticipanteItem({
               )}`
             : 'Sem sessão'}
         </small>
+
+        {disponibilidade && (
+          <small>
+            Grupo: {disponibilidade.occupancy}/
+            {disponibilidade.capacity}
+          </small>
+        )}
       </span>
 
       <span className="recepcao-participante-meta">
@@ -145,6 +154,7 @@ function ListaParticipantes({
   participantes,
   participanteSelecionado,
   sessoesPorId,
+  disponibilidadePorSessao,
   onSelecionar,
 }) {
   return (
@@ -161,26 +171,36 @@ function ListaParticipantes({
 
       <div className="recepcao-lista-content">
         {participantes.length > 0 ? (
-          participantes.map((participante) => (
-            <ParticipanteItem
-              key={participante.id}
-              participante={participante}
-              selecionado={
-                participanteSelecionado?.id ===
-                participante.id
-              }
-              sessao={
-                participante.eventSessionId
-                  ? sessoesPorId.get(
-                      String(
-                        participante.eventSessionId,
-                      ),
-                    )
-                  : null
-              }
-              onSelecionar={onSelecionar}
-            />
-          ))
+          participantes.map((participante) => {
+            const sessaoId =
+              participante.eventSessionId
+
+            return (
+              <ParticipanteItem
+                key={participante.id}
+                participante={participante}
+                selecionado={
+                  participanteSelecionado?.id ===
+                  participante.id
+                }
+                sessao={
+                  sessaoId
+                    ? sessoesPorId.get(
+                        String(sessaoId),
+                      )
+                    : null
+                }
+                disponibilidade={
+                  sessaoId
+                    ? disponibilidadePorSessao.get(
+                        String(sessaoId),
+                      )
+                    : null
+                }
+                onSelecionar={onSelecionar}
+              />
+            )
+          })
         ) : (
           <div className="recepcao-lista-vazia">
             Nenhum participante neste status.
@@ -198,6 +218,8 @@ function Recepcao() {
 
   const [eventos, setEventos] = useState([])
   const [sessoes, setSessoes] = useState([])
+  const [disponibilidade, setDisponibilidade] =
+    useState([])
   const [participantes, setParticipantes] =
     useState([])
 
@@ -215,6 +237,16 @@ function Recepcao() {
     participanteSelecionado,
     setParticipanteSelecionado,
   ] = useState(null)
+
+  const [
+    dataGrupoSelecionada,
+    setDataGrupoSelecionada,
+  ] = useState('')
+
+  const [
+    sessaoGrupoDestinoId,
+    setSessaoGrupoDestinoId,
+  ] = useState('')
 
   const [busca, setBusca] = useState('')
   const [carregando, setCarregando] =
@@ -245,6 +277,17 @@ function Recepcao() {
     [sessoes],
   )
 
+  const disponibilidadePorSessao = useMemo(
+    () =>
+      new Map(
+        disponibilidade.map((item) => [
+          String(item.sessionId),
+          item,
+        ]),
+      ),
+    [disponibilidade],
+  )
+
   const sessaoFiltrada = useMemo(
     () =>
       sessoes.find(
@@ -253,6 +296,27 @@ function Recepcao() {
           String(sessaoSelecionadaId),
       ) || null,
     [sessoes, sessaoSelecionadaId],
+  )
+
+  const datasDisponiveis = useMemo(
+    () =>
+      [
+        ...new Set(
+          disponibilidade.map(
+            (sessao) => sessao.date,
+          ),
+        ),
+      ].sort(),
+    [disponibilidade],
+  )
+
+  const sessoesDaDataSelecionada = useMemo(
+    () =>
+      disponibilidade.filter(
+        (sessao) =>
+          sessao.date === dataGrupoSelecionada,
+      ),
+    [disponibilidade, dataGrupoSelecionada],
   )
 
   const participantesFiltrados = useMemo(() => {
@@ -267,17 +331,21 @@ function Recepcao() {
 
       const correspondeNome =
         participante.fullName
-          .toLowerCase()
-          .includes(termo)
+          ?.toLowerCase()
+          .includes(termo) ?? false
 
       const correspondeEmail =
         participante.email
           ?.toLowerCase()
           .includes(termo) ?? false
 
+      const telefoneNumeros =
+        participante.phone
+          ?.replace(/\D/g, '') ?? ''
+
       const correspondeTelefone =
         numeros.length > 0 &&
-        participante.phone.includes(numeros)
+        telefoneNumeros.includes(numeros)
 
       const correspondeBusca =
         !termo ||
@@ -307,7 +375,8 @@ function Recepcao() {
     () =>
       participantesFiltrados.filter(
         (participante) =>
-          participante.arrivalStatus === 'ARRIVED',
+          participante.arrivalStatus ===
+          'ARRIVED',
       ),
     [participantesFiltrados],
   )
@@ -355,6 +424,58 @@ function Recepcao() {
         )
       : 0
 
+  const sessaoDoSelecionado =
+    participanteSelecionado?.eventSessionId
+      ? sessoesPorId.get(
+          String(
+            participanteSelecionado.eventSessionId,
+          ),
+        )
+      : null
+
+  const disponibilidadeSessaoAtual =
+    participanteSelecionado?.eventSessionId
+      ? disponibilidadePorSessao.get(
+          String(
+            participanteSelecionado.eventSessionId,
+          ),
+        )
+      : null
+
+  const destinoSelecionado =
+    sessaoGrupoDestinoId
+      ? disponibilidadePorSessao.get(
+          String(sessaoGrupoDestinoId),
+        )
+      : null
+
+  const statusSelecionado =
+    participanteSelecionado
+      ? STATUS_CONFIG[
+          participanteSelecionado.arrivalStatus
+        ]
+      : null
+
+  const participantePronto =
+    participanteSelecionado?.arrivalStatus ===
+    'READY_FOR_GROUP'
+
+  const mesmaSessao =
+    participanteSelecionado?.eventSessionId != null &&
+    String(
+      participanteSelecionado.eventSessionId,
+    ) === String(sessaoGrupoDestinoId)
+
+  const podeAlocar =
+    participantePronto &&
+    sessaoGrupoDestinoId &&
+    destinoSelecionado &&
+    (
+      destinoSelecionado.available > 0 ||
+      mesmaSessao
+    ) &&
+    destinoSelecionado.status !== 'CANCELLED'
+
   useEffect(() => {
     carregarEventos()
   }, [])
@@ -379,6 +500,43 @@ function Recepcao() {
 
     return () => window.clearTimeout(timeout)
   }, [sucesso])
+
+  useEffect(() => {
+    if (!participanteSelecionado) {
+      setDataGrupoSelecionada('')
+      setSessaoGrupoDestinoId('')
+      return
+    }
+
+    if (participanteSelecionado.eventSessionId) {
+      const atual =
+        disponibilidadePorSessao.get(
+          String(
+            participanteSelecionado.eventSessionId,
+          ),
+        )
+
+      if (atual) {
+        setDataGrupoSelecionada(atual.date)
+
+        setSessaoGrupoDestinoId(
+          String(atual.sessionId),
+        )
+
+        return
+      }
+    }
+
+    const primeiraData =
+      datasDisponiveis[0] || ''
+
+    setDataGrupoSelecionada(primeiraData)
+    setSessaoGrupoDestinoId('')
+  }, [
+    participanteSelecionado,
+    disponibilidadePorSessao,
+    datasDisponiveis,
+  ])
 
   function focarBusca() {
     window.setTimeout(() => {
@@ -426,6 +584,7 @@ function Recepcao() {
       const [
         respostaParticipantes,
         respostaSessoes,
+        respostaDisponibilidade,
       ] = await Promise.all([
         listarParticipantesRecepcao({
           eventId,
@@ -444,6 +603,8 @@ function Recepcao() {
             'startTime,asc',
           ],
         }),
+
+        listarSessoesParaGrupos(eventId),
       ])
 
       setParticipantes(
@@ -452,6 +613,10 @@ function Recepcao() {
 
       setSessoes(
         respostaSessoes.content || [],
+      )
+
+      setDisponibilidade(
+        respostaDisponibilidade || [],
       )
 
       focarBusca()
@@ -473,6 +638,7 @@ function Recepcao() {
       const [
         respostaParticipantes,
         respostaSessoes,
+        respostaDisponibilidade,
       ] = await Promise.all([
         listarParticipantesRecepcao({
           eventId,
@@ -491,13 +657,22 @@ function Recepcao() {
             'startTime,asc',
           ],
         }),
+
+        listarSessoesParaGrupos(eventId),
       ])
 
       const listaAtualizada =
         respostaParticipantes.content || []
 
       setParticipantes(listaAtualizada)
-      setSessoes(respostaSessoes.content || [])
+
+      setSessoes(
+        respostaSessoes.content || [],
+      )
+
+      setDisponibilidade(
+        respostaDisponibilidade || [],
+      )
 
       const participanteAtualizado =
         listaAtualizada.find(
@@ -509,7 +684,7 @@ function Recepcao() {
         participanteAtualizado,
       )
     } catch {
-      // A mensagem original da operação será mantida.
+      // Mantém a mensagem da operação original.
     }
   }
 
@@ -602,9 +777,6 @@ function Recepcao() {
     await executarAcao(
       marcarProntoParaGrupo,
       'Participante pronto para grupo.',
-      {
-        selecionarProximo: true,
-      },
     )
   }
 
@@ -618,40 +790,44 @@ function Recepcao() {
     )
   }
 
-  async function trocarSessao(event) {
-    if (!participanteSelecionado) {
+  async function confirmarGrupo() {
+    if (
+      !participanteSelecionado ||
+      !sessaoGrupoDestinoId ||
+      !podeAlocar
+    ) {
       return
     }
 
     const participanteAtual =
       participanteSelecionado
 
-    const novoId = event.target.value
+    const tinhaSessao =
+      participanteAtual.eventSessionId != null
 
     setProcessando(true)
     setErro('')
 
     try {
-      const participanteAtualizado =
-        await alterarSessaoRecepcao(
-          participanteAtual.id,
-          novoId ? Number(novoId) : null,
-          participanteAtual.version,
-        )
-
-      atualizarParticipanteNaLista(
-        participanteAtualizado,
+      await alocarParticipanteNaSessao(
+        participanteAtual.id,
+        Number(sessaoGrupoDestinoId),
       )
 
       setSucesso(
-        novoId
-          ? 'Sessão alterada com sucesso.'
-          : 'Participante removido da sessão.',
+        tinhaSessao
+          ? 'Participante movido para o novo grupo.'
+          : 'Participante alocado no grupo com sucesso.',
+      )
+
+      await recarregarMantendoParticipante(
+        eventoSelecionadoId,
+        participanteAtual.id,
       )
     } catch (error) {
       setErro(
         error.message ||
-          'Não foi possível alterar a sessão.',
+          'Não foi possível alocar o participante no grupo.',
       )
 
       await recarregarMantendoParticipante(
@@ -662,22 +838,6 @@ function Recepcao() {
       setProcessando(false)
     }
   }
-
-  const sessaoDoSelecionado =
-    participanteSelecionado?.eventSessionId
-      ? sessoesPorId.get(
-          String(
-            participanteSelecionado.eventSessionId,
-          ),
-        )
-      : null
-
-  const statusSelecionado =
-    participanteSelecionado
-      ? STATUS_CONFIG[
-          participanteSelecionado.arrivalStatus
-        ]
-      : null
 
   return (
     <div className="recepcao-page">
@@ -696,8 +856,8 @@ function Recepcao() {
           <h1>Recepção</h1>
 
           <p>
-            Registre chegadas e prepare os
-            participantes para os grupos.
+            Registre chegadas, prepare os
+            participantes e organize os grupos.
           </p>
         </div>
 
@@ -832,6 +992,7 @@ function Recepcao() {
             ? 'Atualizando...'
             : 'Atualizar'}
         </button>
+
         <div className="recepcao-print-tooltip">
           <button
             type="button"
@@ -891,49 +1052,58 @@ function Recepcao() {
         </div>
       ) : (
         <main className="recepcao-workspace">
-            <div className="recepcao-listas">
+          <div className="recepcao-listas">
             <ListaParticipantes
-                titulo="Ainda não chegaram"
-                quantidade={naoChegaram.length}
-                tipo="nao-chegaram"
-                participantes={naoChegaram}
-                participanteSelecionado={
+              titulo="Ainda não chegaram"
+              quantidade={naoChegaram.length}
+              tipo="nao-chegaram"
+              participantes={naoChegaram}
+              participanteSelecionado={
                 participanteSelecionado
-                }
-                sessoesPorId={sessoesPorId}
-                onSelecionar={
+              }
+              sessoesPorId={sessoesPorId}
+              disponibilidadePorSessao={
+                disponibilidadePorSessao
+              }
+              onSelecionar={
                 setParticipanteSelecionado
-                }
+              }
             />
 
             <ListaParticipantes
-                titulo="Chegaram"
-                quantidade={chegaram.length}
-                tipo="chegaram"
-                participantes={chegaram}
-                participanteSelecionado={
+              titulo="Chegaram"
+              quantidade={chegaram.length}
+              tipo="chegaram"
+              participantes={chegaram}
+              participanteSelecionado={
                 participanteSelecionado
-                }
-                sessoesPorId={sessoesPorId}
-                onSelecionar={
+              }
+              sessoesPorId={sessoesPorId}
+              disponibilidadePorSessao={
+                disponibilidadePorSessao
+              }
+              onSelecionar={
                 setParticipanteSelecionado
-                }
+              }
             />
 
             <ListaParticipantes
-                titulo="Prontos para grupo"
-                quantidade={prontos.length}
-                tipo="prontos"
-                participantes={prontos}
-                participanteSelecionado={
+              titulo="Prontos para grupo"
+              quantidade={prontos.length}
+              tipo="prontos"
+              participantes={prontos}
+              participanteSelecionado={
                 participanteSelecionado
-                }
-                sessoesPorId={sessoesPorId}
-                onSelecionar={
+              }
+              sessoesPorId={sessoesPorId}
+              disponibilidadePorSessao={
+                disponibilidadePorSessao
+              }
+              onSelecionar={
                 setParticipanteSelecionado
-                }
+              }
             />
-            </div>
+          </div>
 
           <aside className="recepcao-detail-panel">
             {participanteSelecionado ? (
@@ -991,7 +1161,7 @@ function Recepcao() {
                   </div>
 
                   <div>
-                    <span>Sessão atual</span>
+                    <span>Grupo atual</span>
 
                     <strong>
                       {sessaoDoSelecionado
@@ -1000,8 +1170,21 @@ function Recepcao() {
                           )} • ${formatarData(
                             sessaoDoSelecionado.date,
                           )}`
-                        : 'Sem sessão'}
+                        : 'Sem grupo'}
                     </strong>
+
+                    {disponibilidadeSessaoAtual && (
+                      <small>
+                        {
+                          disponibilidadeSessaoAtual.occupancy
+                        }
+                        /
+                        {
+                          disponibilidadeSessaoAtual.capacity
+                        }
+                        {' participantes'}
+                      </small>
+                    )}
                   </div>
 
                   <div>
@@ -1015,40 +1198,145 @@ function Recepcao() {
                   </div>
                 </div>
 
-                <div className="recepcao-session-control">
-                  <label htmlFor="trocarSessao">
-                    Alterar sessão
-                  </label>
+                {participantePronto && (
+                  <div className="recepcao-session-control">
+                    <label htmlFor="dataGrupo">
+                      Data do grupo
+                    </label>
 
-                  <select
-                    id="trocarSessao"
-                    value={
-                      participanteSelecionado.eventSessionId ??
-                      ''
-                    }
-                    onChange={trocarSessao}
-                    disabled={processando}
-                  >
-                    <option value="">
-                      Sem sessão
-                    </option>
+                    <select
+                      id="dataGrupo"
+                      value={dataGrupoSelecionada}
+                      onChange={(event) => {
+                        setDataGrupoSelecionada(
+                          event.target.value,
+                        )
 
-                    {sessoes.map((sessao) => (
-                      <option
-                        key={sessao.id}
-                        value={sessao.id}
-                      >
-                        {formatarData(
-                          sessao.date,
-                        )}
-                        {' — '}
-                        {formatarHorario(
-                          sessao.startTime,
-                        )}
+                        setSessaoGrupoDestinoId('')
+                      }}
+                      disabled={processando}
+                    >
+                      <option value="">
+                        Selecione a data
                       </option>
-                    ))}
-                  </select>
-                </div>
+
+                      {datasDisponiveis.map((data) => (
+                        <option
+                          key={data}
+                          value={data}
+                        >
+                          {formatarData(data)}
+                        </option>
+                      ))}
+                    </select>
+
+                    <label htmlFor="grupoDestino">
+                      Sessão / grupo
+                    </label>
+
+                    <select
+                      id="grupoDestino"
+                      value={sessaoGrupoDestinoId}
+                      onChange={(event) =>
+                        setSessaoGrupoDestinoId(
+                          event.target.value,
+                        )
+                      }
+                      disabled={
+                        processando ||
+                        !dataGrupoSelecionada
+                      }
+                    >
+                      <option value="">
+                        Selecione o grupo
+                      </option>
+
+                      {sessoesDaDataSelecionada.map(
+                        (sessao) => {
+                          const atual =
+                            String(
+                              participanteSelecionado.eventSessionId,
+                            ) ===
+                            String(sessao.sessionId)
+
+                          const lotada =
+                            sessao.available <= 0 &&
+                            !atual
+
+                          const cancelada =
+                            sessao.status ===
+                            'CANCELLED'
+
+                          return (
+                            <option
+                              key={sessao.sessionId}
+                              value={sessao.sessionId}
+                              disabled={
+                                lotada ||
+                                cancelada
+                              }
+                            >
+                              {formatarHorario(
+                                sessao.startTime,
+                              )}
+                              {' — '}
+                              {sessao.occupancy}/
+                              {sessao.capacity}
+                              {' — '}
+                              {lotada
+                                ? 'LOTADO'
+                                : `${sessao.available} vagas`}
+                              {atual
+                                ? ' — ATUAL'
+                                : ''}
+                            </option>
+                          )
+                        },
+                      )}
+                    </select>
+
+                    {destinoSelecionado && (
+                      <div className="recepcao-intermediate-alert">
+                        <strong>
+                          {formatarHorario(
+                            destinoSelecionado.startTime,
+                          )}
+                        </strong>
+                        {' • '}
+                        {destinoSelecionado.occupancy}/
+                        {destinoSelecionado.capacity}
+                        {' participantes • '}
+                        {destinoSelecionado.available}
+                        {' vagas disponíveis'}
+                      </div>
+                    )}
+
+                    <button
+                      type="button"
+                      className="recepcao-action pronto"
+                      onClick={confirmarGrupo}
+                      disabled={
+                        processando ||
+                        !podeAlocar ||
+                        mesmaSessao
+                      }
+                    >
+                      {processando
+                        ? 'Processando...'
+                        : participanteSelecionado.eventSessionId
+                          ? 'Mover de grupo'
+                          : 'Alocar no grupo'}
+                    </button>
+                  </div>
+                )}
+
+                {!participantePronto && (
+                  <div className="recepcao-intermediate-alert">
+                    A seleção de grupo ficará
+                    disponível quando o participante
+                    estiver pronto para grupo.
+                  </div>
+                )}
 
                 <div className="recepcao-observacoes">
                   <span>Observações</span>

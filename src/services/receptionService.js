@@ -127,3 +127,23 @@ export function buscarListaImpressaoSessao(
     `/reception/sessions/${sessionId}/print`,
   )
 }
+
+export function listarSessoesParaGrupos(
+  eventId,
+) {
+  return apiRequest(
+    `/groups/events/${eventId}/sessions`,
+  )
+}
+
+export function alocarParticipanteNaSessao(
+  participantId,
+  sessionId,
+) {
+  return apiRequest(
+    `/groups/participants/${participantId}/session/${sessionId}`,
+    {
+      method: 'PATCH',
+    },
+  )
+}

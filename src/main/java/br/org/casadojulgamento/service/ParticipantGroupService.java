@@ -16,6 +16,9 @@ import br.org.casadojulgamento.repository.ParticipantRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import br.org.casadojulgamento.api.dto.group.SessionGroupAvailabilityResponse;
+
+import java.util.List;
 
 import java.time.LocalDateTime;
 
@@ -149,7 +152,7 @@ public class ParticipantGroupService {
                     LocalDateTime.now()
             );
 
-            memberRepository.save(
+            memberRepository.saveAndFlush(
                     currentMembership
             );
         }
@@ -378,4 +381,44 @@ public class ParticipantGroupService {
                                 )
                 );
     }
+
+    @Transactional(readOnly = true)
+    public List<SessionGroupAvailabilityResponse>
+    buscarDisponibilidadeDasSessoes(
+            Long eventId
+    ) {
+        List<EventSession> sessions =
+                eventSessionRepository
+                        .findAllByEventIdAndActiveTrueOrderByDateAscStartTimeAsc(
+                                eventId
+                        );
+
+        return sessions.stream()
+                .map(session -> {
+                    long occupancy =
+                            participantRepository
+                                    .countByEventSessionIdAndActiveTrue(
+                                            session.getId()
+                                    );
+
+                    long available =
+                            Math.max(
+                                    session.getCapacity()
+                                            - occupancy,
+                                    0
+                            );
+
+                    return new SessionGroupAvailabilityResponse(
+                            session.getId(),
+                            session.getDate(),
+                            session.getStartTime(),
+                            session.getCapacity(),
+                            occupancy,
+                            available,
+                            session.getStatus()
+                    );
+                })
+                .toList();
+    }
+
 }

@@ -4,7 +4,9 @@ import br.org.casadojulgamento.service.ParticipantGroupService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import br.org.casadojulgamento.api.dto.group.SessionGroupAvailabilityResponse;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -46,4 +48,16 @@ public class ParticipantGroupController {
                         sessionId
                 );
     }
+
+    @GetMapping("/events/{eventId}/sessions")
+    public List<SessionGroupAvailabilityResponse>
+    buscarSessoesDoEvento(
+            @PathVariable Long eventId
+    ) {
+        return participantGroupService
+                .buscarDisponibilidadeDasSessoes(
+                        eventId
+                );
+    }
+
 }

@@ -15,7 +15,8 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/reception/participants")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize(
+        "hasAnyRole('ADMIN', 'COORDENADOR', 'LIDER', 'RECEPCAO')")
 public class ReceptionController {
 
     private final ReceptionService receptionService;

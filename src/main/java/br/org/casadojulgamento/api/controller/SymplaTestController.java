@@ -6,11 +6,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.context.annotation.Profile;
 
 @RestController
 @RequestMapping("/api/integrations/sympla")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('ADMIN')")
+@Profile("dev")
 public class SymplaTestController {
 
     private final SymplaClient symplaClient;

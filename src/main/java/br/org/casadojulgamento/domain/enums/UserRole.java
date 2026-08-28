@@ -8,8 +8,6 @@ public enum UserRole {
 
     LIDER,
 
-    PORTARIA,
-
-    VOLUNTARIO
+    RECEPCAO
 
 }

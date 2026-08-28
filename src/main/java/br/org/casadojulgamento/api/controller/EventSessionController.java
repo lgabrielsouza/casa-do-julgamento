@@ -18,7 +18,8 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/sessions")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize(
+        "hasAnyRole('ADMIN', 'COORDENADOR', 'LIDER', 'RECEPCAO')")
 public class EventSessionController {
 
     private final EventSessionService eventSessionService;

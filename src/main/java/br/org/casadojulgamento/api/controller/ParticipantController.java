@@ -16,7 +16,8 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/participants")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize(
+        "hasAnyRole('ADMIN', 'COORDENADOR', 'LIDER', 'RECEPCAO')")
 public class ParticipantController {
 
     private final ParticipantService participantService;

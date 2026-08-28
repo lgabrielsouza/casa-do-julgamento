@@ -11,7 +11,8 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/integrations/sympla")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize(
+        "hasAnyRole('ADMIN', 'COORDENADOR')")
 public class SymplaSyncController {
 
     private final SymplaSyncService symplaSyncService;

@@ -3,6 +3,7 @@ package br.org.casadojulgamento.api.controller;
 import br.org.casadojulgamento.service.ParticipantGroupService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import br.org.casadojulgamento.api.dto.group.SessionGroupAvailabilityResponse;
 import br.org.casadojulgamento.api.dto.group.ParticipantGroupMemberResponse;
@@ -11,6 +12,8 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/groups")
+@PreAuthorize(
+        "hasAnyRole('ADMIN', 'COORDENADOR', 'LIDER', 'RECEPCAO')")
 @RequiredArgsConstructor
 public class ParticipantGroupController {
 
@@ -79,6 +82,5 @@ public class ParticipantGroupController {
                         sessionId
                 );
         }
-
 
 }

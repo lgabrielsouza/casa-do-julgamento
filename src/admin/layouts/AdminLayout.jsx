@@ -3,9 +3,7 @@ import {
   Outlet,
   useNavigate,
 } from 'react-router-dom'
-
 import logoCasaJulgamento from '../../main/resources/static/assets/images/logo-cj.png'
-
 import './AdminLayout.css'
 
 function AdminLayout() {
@@ -26,6 +24,30 @@ function AdminLayout() {
   } catch {
     localStorage.removeItem('cj_usuario')
   }
+
+  const role = usuario.role
+
+  const isAdmin = role === 'ADMIN'
+  const isCoordenador = role === 'COORDENADOR'
+
+  const podeAcessarEvento = [
+    'ADMIN',
+    'COORDENADOR',
+    'LIDER',
+    'RECEPCAO',
+  ].includes(role)
+
+  const podeAcessarSympla =
+    isAdmin || isCoordenador
+
+  const podeAcessarMinisterio =
+    isAdmin || isCoordenador
+
+  const podeAcessarRelatorios =
+    isAdmin || isCoordenador
+
+  const podeAcessarConfiguracoes =
+    isAdmin || isCoordenador
 
   const inicial =
     usuario.nome
@@ -63,68 +85,92 @@ function AdminLayout() {
             Dashboard
           </NavLink>
 
-          <p className="sidebar-section-title">
-            EVENTO
-          </p>
+          {podeAcessarEvento && (
+            <>
+              <p className="sidebar-section-title">
+                EVENTO
+              </p>
 
-          <NavLink to="/admin/eventos">
-            Eventos
-          </NavLink>
+              <NavLink to="/admin/eventos">
+                Eventos
+              </NavLink>
 
-          <NavLink to="/admin/sessoes">
-            Sessões
-          </NavLink>
+              <NavLink to="/admin/sessoes">
+                Sessões
+              </NavLink>
 
-          <NavLink to="/admin/participantes">
-            Participantes
-          </NavLink>
+              <NavLink to="/admin/participantes">
+                Participantes
+              </NavLink>
 
-          <NavLink
-            to="/admin/recepcao"
-            className={({ isActive }) =>
-              isActive
-                ? 'admin-nav-link active'
-                : 'admin-nav-link'
-            }
-          >
-            <span>Recepção</span>
-          </NavLink>
+              <NavLink
+                to="/admin/recepcao"
+                className={({ isActive }) =>
+                  isActive
+                    ? 'admin-nav-link active'
+                    : 'admin-nav-link'
+                }
+              >
+                <span>Recepção</span>
+              </NavLink>
 
-          <NavLink to="/admin/ingressos">
-            Ingressos
-          </NavLink>
+              {(isAdmin || isCoordenador) && (
+                <NavLink to="/admin/ingressos">
+                  Ingressos
+                </NavLink>
+              )}
 
-          <NavLink to="/admin/sympla">
-            Sympla
-          </NavLink>
+              {podeAcessarSympla && (
+                <NavLink to="/admin/sympla">
+                  Sympla
+                </NavLink>
+              )}
+            </>
+          )}
 
-          <p className="sidebar-section-title">
-            MINISTÉRIO
-          </p>
+          {podeAcessarMinisterio && (
+            <>
+              <p className="sidebar-section-title">
+                MINISTÉRIO
+              </p>
 
-          <NavLink to="/admin/decisoes">
-            Decisões
-          </NavLink>
+              <NavLink to="/admin/decisoes">
+                Decisões
+              </NavLink>
 
-          <NavLink to="/admin/igrejas">
-            Igrejas Parceiras
-          </NavLink>
+              <NavLink to="/admin/igrejas">
+                Igrejas Parceiras
+              </NavLink>
+            </>
+          )}
 
-          <p className="sidebar-section-title">
-            ADMINISTRAÇÃO
-          </p>
+          {(isAdmin ||
+            podeAcessarRelatorios ||
+            podeAcessarConfiguracoes) && (
+            <>
+              <p className="sidebar-section-title">
+                ADMINISTRAÇÃO
+              </p>
 
-          <NavLink to="/admin/usuarios">
-            Usuários
-          </NavLink>
+              {isAdmin && (
+                <NavLink to="/admin/usuarios">
+                  Usuários
+                </NavLink>
+              )}
 
-          <NavLink to="/admin/relatorios">
-            Relatórios
-          </NavLink>
+              {podeAcessarRelatorios && (
+                <NavLink to="/admin/relatorios">
+                  Relatórios
+                </NavLink>
+              )}
 
-          <NavLink to="/admin/configuracoes">
-            Configurações
-          </NavLink>
+              {podeAcessarConfiguracoes && (
+                <NavLink to="/admin/configuracoes">
+                  Configurações
+                </NavLink>
+              )}
+            </>
+          )}
         </nav>
 
         <button

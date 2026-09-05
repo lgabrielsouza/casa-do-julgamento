@@ -22,6 +22,18 @@ import Sympla from './admin/sympla/Sympla.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
 import RecepcaoGrupos from './admin/recepcao/RecepcaoGrupos.jsx'
 
+const PERFIS_EVENTO = [
+  'ADMIN',
+  'COORDENADOR',
+  'LIDER',
+  'RECEPCAO',
+]
+
+const PERFIS_GERAIS = [
+  'ADMIN',
+  'COORDENADOR',
+]
+
 function App() {
   return (
     <Routes>
@@ -43,7 +55,7 @@ function App() {
       <Route
         path="/admin/recepcao/imprimir/:sessionId"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute roles={PERFIS_EVENTO}>
             <RecepcaoPrint />
           </ProtectedRoute>
         }
@@ -74,62 +86,110 @@ function App() {
 
         <Route
           path="eventos"
-          element={<Eventos />}
+          element={
+            <ProtectedRoute roles={PERFIS_EVENTO}>
+              <Eventos />
+            </ProtectedRoute>
+          }
         />
 
         <Route
           path="sessoes"
-          element={<Sessoes />}
+          element={
+            <ProtectedRoute roles={PERFIS_EVENTO}>
+              <Sessoes />
+            </ProtectedRoute>
+          }
         />
 
         <Route
           path="participantes"
-          element={<Participantes />}
+          element={
+            <ProtectedRoute roles={PERFIS_EVENTO}>
+              <Participantes />
+            </ProtectedRoute>
+          }
         />
 
         <Route
           path="recepcao"
-          element={<Recepcao />}
+          element={
+            <ProtectedRoute roles={PERFIS_EVENTO}>
+              <Recepcao />
+            </ProtectedRoute>
+          }
         />
 
         <Route
           path="recepcao/grupos"
-          element={<RecepcaoGrupos />}
-        />   
+          element={
+            <ProtectedRoute roles={PERFIS_EVENTO}>
+              <RecepcaoGrupos />
+            </ProtectedRoute>
+          }
+        />
 
         <Route
           path="ingressos"
-          element={<Ingressos />}
+          element={
+            <ProtectedRoute roles={PERFIS_GERAIS}>
+              <Ingressos />
+            </ProtectedRoute>
+          }
         />
 
         <Route
           path="sympla"
-          element={<Sympla />}
+          element={
+            <ProtectedRoute roles={PERFIS_GERAIS}>
+              <Sympla />
+            </ProtectedRoute>
+          }
         />
 
         <Route
           path="decisoes"
-          element={<Decisoes />}
+          element={
+            <ProtectedRoute roles={PERFIS_GERAIS}>
+              <Decisoes />
+            </ProtectedRoute>
+          }
         />
 
         <Route
           path="igrejas"
-          element={<Igrejas />}
+          element={
+            <ProtectedRoute roles={PERFIS_GERAIS}>
+              <Igrejas />
+            </ProtectedRoute>
+          }
         />
 
         <Route
           path="usuarios"
-          element={<Usuarios />}
+          element={
+            <ProtectedRoute roles={['ADMIN']}>
+              <Usuarios />
+            </ProtectedRoute>
+          }
         />
 
         <Route
           path="relatorios"
-          element={<Relatorios />}
+          element={
+            <ProtectedRoute roles={PERFIS_GERAIS}>
+              <Relatorios />
+            </ProtectedRoute>
+          }
         />
 
         <Route
           path="configuracoes"
-          element={<Configuracoes />}
+          element={
+            <ProtectedRoute roles={PERFIS_GERAIS}>
+              <Configuracoes />
+            </ProtectedRoute>
+          }
         />
       </Route>
 

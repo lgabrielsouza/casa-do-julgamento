@@ -186,12 +186,12 @@ function App() {
         <Route
           path="configuracoes"
           element={
-            <ProtectedRoute roles={PERFIS_GERAIS}>
+            <ProtectedRoute>
               <Configuracoes />
             </ProtectedRoute>
           }
         />
-      </Route>
+        </Route>
 
       <Route
         path="*"

@@ -1,34 +1,51 @@
 import {
+  useEffect,
+  useState,
+} from 'react'
+
+import {
   NavLink,
   Outlet,
   useNavigate,
 } from 'react-router-dom'
+
 import logoCasaJulgamento from '../../main/resources/static/assets/images/logo-cj.png'
+import { buscarFotoPerfil } from '../../services/profileService'
+
 import './AdminLayout.css'
 
 function AdminLayout() {
   const navigate = useNavigate()
 
-  const usuarioSalvo =
-    localStorage.getItem('cj_usuario')
+  const [fotoUrl, setFotoUrl] = useState(null)
 
-  let usuario = {
-    nome: 'Usuário',
-    role: 'SEM PERFIL',
-  }
+  const [usuario, setUsuario] = useState(() => {
+    const usuarioSalvo =
+      localStorage.getItem('cj_usuario')
 
-  try {
-    if (usuarioSalvo) {
-      usuario = JSON.parse(usuarioSalvo)
+    try {
+      return usuarioSalvo
+        ? JSON.parse(usuarioSalvo)
+        : {
+            nome: 'Usuário',
+            role: 'SEM PERFIL',
+          }
+    } catch {
+      localStorage.removeItem('cj_usuario')
+
+      return {
+        nome: 'Usuário',
+        role: 'SEM PERFIL',
+      }
     }
-  } catch {
-    localStorage.removeItem('cj_usuario')
-  }
+  })
 
   const role = usuario.role
 
   const isAdmin = role === 'ADMIN'
-  const isCoordenador = role === 'COORDENADOR'
+
+  const isCoordenador =
+    role === 'COORDENADOR'
 
   const podeAcessarEvento = [
     'ADMIN',
@@ -46,14 +63,113 @@ function AdminLayout() {
   const podeAcessarRelatorios =
     isAdmin || isCoordenador
 
-  const podeAcessarConfiguracoes =
-    isAdmin || isCoordenador
+  const podeAcessarConfiguracoes = true
 
   const inicial =
     usuario.nome
       ?.trim()
       ?.charAt(0)
       ?.toUpperCase() || 'U'
+
+  useEffect(() => {
+    let urlCriada = null
+
+    async function carregarFotoUsuario() {
+      try {
+        const blob =
+          await buscarFotoPerfil()
+
+        if (!blob) {
+          setFotoUrl(null)
+          return
+        }
+
+        urlCriada =
+          URL.createObjectURL(blob)
+
+        setFotoUrl(urlCriada)
+      } catch {
+        setFotoUrl(null)
+      }
+    }
+
+    carregarFotoUsuario()
+
+    return () => {
+      if (urlCriada) {
+        URL.revokeObjectURL(
+          urlCriada,
+        )
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+  function atualizarPerfilNoHeader() {
+    const usuarioSalvo =
+      localStorage.getItem('cj_usuario')
+
+    try {
+      if (usuarioSalvo) {
+        setUsuario(
+          JSON.parse(usuarioSalvo),
+        )
+      }
+    } catch {
+      // Mantém o usuário atual.
+    }
+
+    carregarFotoUsuarioAtualizada()
+  }
+
+  async function carregarFotoUsuarioAtualizada() {
+    try {
+      const blob =
+        await buscarFotoPerfil()
+
+      if (!blob) {
+        setFotoUrl((urlAnterior) => {
+          if (urlAnterior) {
+            URL.revokeObjectURL(
+              urlAnterior,
+            )
+          }
+
+          return null
+        })
+
+        return
+      }
+
+      const novaUrl =
+        URL.createObjectURL(blob)
+
+      setFotoUrl((urlAnterior) => {
+        if (urlAnterior) {
+          URL.revokeObjectURL(
+            urlAnterior,
+          )
+        }
+
+        return novaUrl
+      })
+    } catch {
+      // Mantém a foto atual.
+    }
+  }
+
+  window.addEventListener(
+    'cj-profile-updated',
+    atualizarPerfilNoHeader,
+  )
+
+  return () => {
+    window.removeEventListener(
+      'cj-profile-updated',
+      atualizarPerfilNoHeader,
+    )
+  }
+}, [])
 
   function handleLogout() {
     localStorage.removeItem('cj_token')
@@ -114,7 +230,8 @@ function AdminLayout() {
                 <span>Recepção</span>
               </NavLink>
 
-              {(isAdmin || isCoordenador) && (
+              {(isAdmin ||
+                isCoordenador) && (
                 <NavLink to="/admin/ingressos">
                   Ingressos
                 </NavLink>
@@ -196,12 +313,25 @@ function AdminLayout() {
 
           <div className="admin-user">
             <div className="admin-user-avatar">
-              {inicial}
+              {fotoUrl ? (
+                <img
+                  src={fotoUrl}
+                  alt="Foto de perfil"
+                  className="admin-user-avatar-image"
+                />
+              ) : (
+                inicial
+              )}
             </div>
 
             <div>
-              <strong>{usuario.nome}</strong>
-              <span>{usuario.role}</span>
+              <strong>
+                {usuario.nome}
+              </strong>
+
+              <span>
+                {usuario.role}
+              </span>
             </div>
           </div>
         </header>

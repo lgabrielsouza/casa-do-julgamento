@@ -29,3 +29,5 @@ target/
 .env.*
 
 Thumbs.db
+
+/uploads/

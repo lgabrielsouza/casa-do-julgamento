@@ -1,358 +1,573 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import {
+  alterarMinhaSenha,
+  atualizarFotoPerfil,
+  atualizarMeuPerfil,
+  buscarFotoPerfil,
+  buscarMeuPerfil,
+  removerFotoPerfil,
+} from '../../services/profileService'
 import './Configuracoes.css'
 
 function Configuracoes() {
-  const [abaAtiva, setAbaAtiva] = useState('geral')
+  const [perfil, setPerfil] = useState(null)
+  const [nome, setNome] = useState('')
+  const [telefone, setTelefone] = useState('')
+
+  const [fotoUrl, setFotoUrl] = useState(null)
+  const [carregando, setCarregando] = useState(true)
+  const [salvandoPerfil, setSalvandoPerfil] =
+    useState(false)
+  const [salvandoFoto, setSalvandoFoto] =
+    useState(false)
+  const [alterandoSenha, setAlterandoSenha] =
+    useState(false)
+
+  const [senhaAtual, setSenhaAtual] = useState('')
+  const [novaSenha, setNovaSenha] = useState('')
+  const [confirmarSenha, setConfirmarSenha] =
+    useState('')
+
+  const [mensagemPerfil, setMensagemPerfil] =
+    useState('')
+  const [erroPerfil, setErroPerfil] =
+    useState('')
+
+  const [mensagemSenha, setMensagemSenha] =
+    useState('')
+  const [erroSenha, setErroSenha] =
+    useState('')
+
+  const [erroFoto, setErroFoto] = useState('')
+
+  useEffect(() => {
+    carregarDados()
+
+    return () => {
+      if (fotoUrl) {
+        URL.revokeObjectURL(fotoUrl)
+      }
+    }
+  }, [])
+
+  async function carregarDados() {
+    try {
+      setCarregando(true)
+      setErroPerfil('')
+
+      const dados = await buscarMeuPerfil()
+
+      setPerfil(dados)
+      setNome(dados.nome || '')
+      setTelefone(dados.telefone || '')
+
+      if (dados.fotoPerfil) {
+        await carregarFoto()
+      }
+    } catch (error) {
+      setErroPerfil(error.message)
+    } finally {
+      setCarregando(false)
+    }
+  }
+
+  async function carregarFoto() {
+    try {
+      const blob = await buscarFotoPerfil()
+
+      if (!blob) {
+        setFotoUrl(null)
+        return
+      }
+
+      const novaUrl = URL.createObjectURL(blob)
+
+      setFotoUrl((urlAnterior) => {
+        if (urlAnterior) {
+          URL.revokeObjectURL(urlAnterior)
+        }
+
+        return novaUrl
+      })
+    } catch (error) {
+      setErroFoto(error.message)
+    }
+  }
+
+  function atualizarUsuarioLocalStorage(usuarioAtualizado) {
+    const usuarioSalvo =
+      localStorage.getItem('cj_usuario')
+
+    let usuarioAtual = {}
+
+    try {
+      usuarioAtual = usuarioSalvo
+        ? JSON.parse(usuarioSalvo)
+        : {}
+    } catch {
+      usuarioAtual = {}
+    }
+
+    const novoUsuario = {
+      ...usuarioAtual,
+      ...usuarioAtualizado,
+    }
+
+    localStorage.setItem(
+      'cj_usuario',
+      JSON.stringify(novoUsuario),
+    )
+    window.dispatchEvent(
+    new CustomEvent('cj-profile-updated'),
+  )
+  }
+
+  async function handleSalvarPerfil(event) {
+    event.preventDefault()
+
+    setMensagemPerfil('')
+    setErroPerfil('')
+
+    try {
+      setSalvandoPerfil(true)
+
+      const atualizado =
+        await atualizarMeuPerfil({
+          nome,
+          telefone,
+        })
+
+      setPerfil(atualizado)
+      setNome(atualizado.nome || '')
+      setTelefone(atualizado.telefone || '')
+
+      atualizarUsuarioLocalStorage(atualizado)
+
+      setMensagemPerfil(
+        'Perfil atualizado com sucesso.',
+      )
+    } catch (error) {
+      setErroPerfil(error.message)
+    } finally {
+      setSalvandoPerfil(false)
+    }
+  }
+
+  async function handleSelecionarFoto(event) {
+    const arquivo = event.target.files?.[0]
+
+    event.target.value = ''
+
+    if (!arquivo) {
+      return
+    }
+
+    setErroFoto('')
+
+    try {
+      setSalvandoFoto(true)
+
+      const atualizado =
+        await atualizarFotoPerfil(arquivo)
+
+      setPerfil(atualizado)
+      atualizarUsuarioLocalStorage(atualizado)
+
+      await carregarFoto()
+    } catch (error) {
+      setErroFoto(error.message)
+    } finally {
+      setSalvandoFoto(false)
+    }
+  }
+
+  async function handleRemoverFoto() {
+    setErroFoto('')
+
+    try {
+      setSalvandoFoto(true)
+
+      const atualizado =
+        await removerFotoPerfil()
+
+      setPerfil(atualizado)
+      atualizarUsuarioLocalStorage(atualizado)
+
+      setFotoUrl((urlAnterior) => {
+        if (urlAnterior) {
+          URL.revokeObjectURL(urlAnterior)
+        }
+
+        return null
+      })
+    } catch (error) {
+      setErroFoto(error.message)
+    } finally {
+      setSalvandoFoto(false)
+    }
+  }
+
+  async function handleAlterarSenha(event) {
+    event.preventDefault()
+
+    setMensagemSenha('')
+    setErroSenha('')
+
+    if (novaSenha !== confirmarSenha) {
+      setErroSenha(
+        'A confirmação da nova senha não confere.',
+      )
+      return
+    }
+
+    if (novaSenha.length < 8) {
+      setErroSenha(
+        'A nova senha deve possuir pelo menos 8 caracteres.',
+      )
+      return
+    }
+
+    try {
+      setAlterandoSenha(true)
+
+      await alterarMinhaSenha({
+        senhaAtual,
+        novaSenha,
+      })
+
+      setSenhaAtual('')
+      setNovaSenha('')
+      setConfirmarSenha('')
+
+      setMensagemSenha(
+        'Senha alterada com sucesso.',
+      )
+    } catch (error) {
+      setErroSenha(error.message)
+    } finally {
+      setAlterandoSenha(false)
+    }
+  }
+
+  if (carregando) {
+    return (
+      <div className="configuracoes-page">
+        <p>Carregando perfil...</p>
+      </div>
+    )
+  }
+
+  if (!perfil) {
+    return (
+      <div className="configuracoes-page">
+        <h1>Configurações</h1>
+
+        {erroPerfil && (
+          <div className="config-alert error">
+            {erroPerfil}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  const inicial =
+    perfil.nome
+      ?.trim()
+      ?.charAt(0)
+      ?.toUpperCase() || 'U'
 
   return (
     <div className="configuracoes-page">
-      <div className="configuracoes-heading">
+      <div className="configuracoes-header">
         <div>
-          <p className="configuracoes-eyebrow">
-            Administração
+          <p className="configuracoes-subtitle">
+            MINHA CONTA
           </p>
 
           <h1>Configurações</h1>
 
           <p>
-            Gerencie preferências gerais, integrações e configurações
-            administrativas do sistema.
+            Gerencie seus dados pessoais,
+            foto e senha de acesso.
           </p>
         </div>
       </div>
 
-      <div className="configuracoes-layout">
-        <aside className="configuracoes-menu">
-          <button
-            type="button"
-            className={abaAtiva === 'geral' ? 'active' : ''}
-            onClick={() => setAbaAtiva('geral')}
-          >
-            Geral
-          </button>
+      <section className="config-card">
+        <div className="config-card-header">
+          <div>
+            <h2>Foto de perfil</h2>
+            <p>
+              Esta foto será usada na sua
+              identificação no painel.
+            </p>
+          </div>
+        </div>
 
-          <button
-            type="button"
-            className={abaAtiva === 'evento' ? 'active' : ''}
-            onClick={() => setAbaAtiva('evento')}
-          >
-            Evento
-          </button>
+        <div className="profile-photo-area">
+          <div className="profile-photo-preview">
+            {fotoUrl ? (
+              <img
+                src={fotoUrl}
+                alt="Foto de perfil"
+              />
+            ) : (
+              <span>{inicial}</span>
+            )}
+          </div>
 
-          <button
-            type="button"
-            className={abaAtiva === 'integracoes' ? 'active' : ''}
-            onClick={() => setAbaAtiva('integracoes')}
-          >
-            Integrações
-          </button>
+          <div className="profile-photo-actions">
+            <label
+              className={`config-button ${
+                salvandoFoto ? 'disabled' : ''
+              }`}
+            >
+              {salvandoFoto
+                ? 'Enviando...'
+                : 'Alterar foto'}
 
-          <button
-            type="button"
-            className={abaAtiva === 'seguranca' ? 'active' : ''}
-            onClick={() => setAbaAtiva('seguranca')}
-          >
-            Segurança
-          </button>
-        </aside>
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={handleSelecionarFoto}
+                disabled={salvandoFoto}
+                hidden
+              />
+            </label>
 
-        <section className="configuracoes-content">
-          {abaAtiva === 'geral' && (
-            <div className="config-section">
-              <div className="config-section-header">
-                <h2>Configurações gerais</h2>
+            {perfil.fotoPerfil && (
+              <button
+                type="button"
+                className="config-button secondary"
+                onClick={handleRemoverFoto}
+                disabled={salvandoFoto}
+              >
+                Remover foto
+              </button>
+            )}
 
-                <p>
-                  Informações básicas exibidas dentro do sistema.
-                </p>
-              </div>
+            <small>
+              JPG, PNG ou WEBP. Máximo de 5 MB.
+            </small>
+          </div>
+        </div>
 
-              <form className="config-form">
-                <div className="config-form-group">
-                  <label htmlFor="nomeProjeto">
-                    Nome do projeto
-                  </label>
+        {erroFoto && (
+          <div className="config-alert error">
+            {erroFoto}
+          </div>
+        )}
+      </section>
 
-                  <input
-                    id="nomeProjeto"
-                    type="text"
-                    defaultValue="Casa do Julgamento"
-                  />
-                </div>
+      <section className="config-card">
+        <div className="config-card-header">
+          <div>
+            <h2>Dados pessoais</h2>
+            <p>
+              Atualize as informações básicas
+              da sua conta.
+            </p>
+          </div>
+        </div>
 
-                <div className="config-form-row">
-                  <div className="config-form-group">
-                    <label htmlFor="emailProjeto">
-                      E-mail administrativo
-                    </label>
+        <form
+          className="config-form"
+          onSubmit={handleSalvarPerfil}
+        >
+          <div className="config-field">
+            <label htmlFor="nome">
+              Nome
+            </label>
 
-                    <input
-                      id="emailProjeto"
-                      type="email"
-                      placeholder="admin@casadojulgamento.com"
-                    />
-                  </div>
+            <input
+              id="nome"
+              type="text"
+              value={nome}
+              onChange={(event) =>
+                setNome(event.target.value)
+              }
+              required
+              minLength={2}
+              maxLength={100}
+            />
+          </div>
 
-                  <div className="config-form-group">
-                    <label htmlFor="telefoneProjeto">
-                      Telefone
-                    </label>
+          <div className="config-field">
+            <label htmlFor="telefone">
+              Telefone
+            </label>
 
-                    <input
-                      id="telefoneProjeto"
-                      type="tel"
-                      placeholder="(83) 99999-9999"
-                    />
-                  </div>
-                </div>
+            <input
+              id="telefone"
+              type="text"
+              value={telefone}
+              onChange={(event) =>
+                setTelefone(event.target.value)
+              }
+              maxLength={20}
+              placeholder="Digite seu telefone"
+            />
+          </div>
 
-                <div className="config-form-group">
-                  <label htmlFor="instagramProjeto">
-                    Instagram
-                  </label>
+          <div className="config-field">
+            <label htmlFor="email">
+              E-mail
+            </label>
 
-                  <input
-                    id="instagramProjeto"
-                    type="text"
-                    placeholder="@casadojulgamento"
-                  />
-                </div>
+            <input
+              id="email"
+              type="email"
+              value={perfil.email || ''}
+              disabled
+            />
 
-                <div className="config-form-actions">
-                  <button type="submit">
-                    Salvar alterações
-                  </button>
-                </div>
-              </form>
+            <small>
+              O e-mail não pode ser alterado
+              nesta tela.
+            </small>
+          </div>
+
+          <div className="config-field">
+            <label htmlFor="role">
+              Perfil de acesso
+            </label>
+
+            <input
+              id="role"
+              type="text"
+              value={perfil.role || ''}
+              disabled
+            />
+          </div>
+
+          {mensagemPerfil && (
+            <div className="config-alert success">
+              {mensagemPerfil}
             </div>
           )}
 
-          {abaAtiva === 'evento' && (
-            <div className="config-section">
-              <div className="config-section-header">
-                <h2>Evento ativo</h2>
-
-                <p>
-                  Configure informações utilizadas como padrão no painel.
-                </p>
-              </div>
-
-              <form className="config-form">
-                <div className="config-form-group">
-                  <label htmlFor="eventoAtual">
-                    Evento selecionado
-                  </label>
-
-                  <select
-                    id="eventoAtual"
-                    defaultValue="cj2026"
-                  >
-                    <option value="cj2026">
-                      Casa do Julgamento 2026
-                    </option>
-                  </select>
-                </div>
-
-                <div className="config-form-row">
-                  <div className="config-form-group">
-                    <label htmlFor="inicioEvento">
-                      Data inicial
-                    </label>
-
-                    <input
-                      id="inicioEvento"
-                      type="date"
-                      defaultValue="2026-10-29"
-                    />
-                  </div>
-
-                  <div className="config-form-group">
-                    <label htmlFor="fimEvento">
-                      Data final
-                    </label>
-
-                    <input
-                      id="fimEvento"
-                      type="date"
-                      defaultValue="2026-11-14"
-                    />
-                  </div>
-                </div>
-
-                <div className="config-form-group">
-                  <label htmlFor="statusEventoConfig">
-                    Status padrão
-                  </label>
-
-                  <select
-                    id="statusEventoConfig"
-                    defaultValue="ativo"
-                  >
-                    <option value="ativo">
-                      Ativo
-                    </option>
-
-                    <option value="rascunho">
-                      Rascunho
-                    </option>
-
-                    <option value="encerrado">
-                      Encerrado
-                    </option>
-                  </select>
-                </div>
-
-                <div className="config-form-actions">
-                  <button type="submit">
-                    Salvar evento
-                  </button>
-                </div>
-              </form>
+          {erroPerfil && (
+            <div className="config-alert error">
+              {erroPerfil}
             </div>
           )}
 
-          {abaAtiva === 'integracoes' && (
-            <div className="config-section">
-              <div className="config-section-header">
-                <h2>Integrações</h2>
+          <div className="config-form-actions">
+            <button
+              type="submit"
+              className="config-button"
+              disabled={salvandoPerfil}
+            >
+              {salvandoPerfil
+                ? 'Salvando...'
+                : 'Salvar alterações'}
+            </button>
+          </div>
+        </form>
+      </section>
 
-                <p>
-                  Gerencie serviços externos utilizados pela plataforma.
-                </p>
-              </div>
+      <section className="config-card">
+        <div className="config-card-header">
+          <div>
+            <h2>Alterar senha</h2>
+            <p>
+              Informe sua senha atual antes de
+              definir uma nova.
+            </p>
+          </div>
+        </div>
 
-              <div className="integration-card">
-                <div className="integration-card-header">
-                  <div>
-                    <span>Venda de ingressos</span>
-                    <h3>PagTickets</h3>
-                  </div>
+        <form
+          className="config-form"
+          onSubmit={handleAlterarSenha}
+        >
+          <div className="config-field">
+            <label htmlFor="senhaAtual">
+              Senha atual
+            </label>
 
-                  <span className="integration-status manual">
-                    Integração manual
-                  </span>
-                </div>
+            <input
+              id="senhaAtual"
+              type="password"
+              value={senhaAtual}
+              onChange={(event) =>
+                setSenhaAtual(
+                  event.target.value,
+                )
+              }
+              required
+              autoComplete="current-password"
+            />
+          </div>
 
-                <p>
-                  Atualmente a PagTickets não disponibiliza integração
-                  automática por API ou webhook para o nosso fluxo.
-                </p>
+          <div className="config-field">
+            <label htmlFor="novaSenha">
+              Nova senha
+            </label>
 
-                <div className="integration-details">
-                  <div>
-                    <span>Venda online</span>
-                    <strong>PagTickets</strong>
-                  </div>
+            <input
+              id="novaSenha"
+              type="password"
+              value={novaSenha}
+              onChange={(event) =>
+                setNovaSenha(
+                  event.target.value,
+                )
+              }
+              required
+              minLength={8}
+              maxLength={72}
+              autoComplete="new-password"
+            />
+          </div>
 
-                  <div>
-                    <span>QR Code</span>
-                    <strong>PagTickets</strong>
-                  </div>
+          <div className="config-field">
+            <label htmlFor="confirmarSenha">
+              Confirmar nova senha
+            </label>
 
-                  <div>
-                    <span>Validação</span>
-                    <strong>App PagTickets</strong>
-                  </div>
+            <input
+              id="confirmarSenha"
+              type="password"
+              value={confirmarSenha}
+              onChange={(event) =>
+                setConfirmarSenha(
+                  event.target.value,
+                )
+              }
+              required
+              minLength={8}
+              maxLength={72}
+              autoComplete="new-password"
+            />
+          </div>
 
-                  <div>
-                    <span>Importação</span>
-                    <strong>Arquivo manual</strong>
-                  </div>
-                </div>
-
-                <div className="integration-warning">
-                  <strong>
-                    Sem sincronização automática
-                  </strong>
-
-                  <p>
-                    Alterações realizadas na PagTickets, incluindo check-ins,
-                    não serão refletidas automaticamente neste sistema enquanto
-                    não houver API ou webhook disponível.
-                  </p>
-                </div>
-              </div>
-
-              <div className="future-integration">
-                <span>Preparado para o futuro</span>
-
-                <h3>API / Webhook PagTickets</h3>
-
-                <p>
-                  A arquitetura será mantida preparada para receber integração
-                  automática quando esses recursos forem disponibilizados.
-                </p>
-
-                <button
-                  type="button"
-                  disabled
-                >
-                  Integração indisponível
-                </button>
-              </div>
+          {mensagemSenha && (
+            <div className="config-alert success">
+              {mensagemSenha}
             </div>
           )}
 
-          {abaAtiva === 'seguranca' && (
-            <div className="config-section">
-              <div className="config-section-header">
-                <h2>Segurança</h2>
-
-                <p>
-                  Preferências relacionadas ao acesso administrativo.
-                </p>
-              </div>
-
-              <div className="security-options">
-                <div className="security-option">
-                  <div>
-                    <strong>Sessão autenticada</strong>
-
-                    <p>
-                      Usuários deverão estar autenticados para acessar
-                      o painel administrativo.
-                    </p>
-                  </div>
-
-                  <span className="security-status planned">
-                    Será implementado
-                  </span>
-                </div>
-
-                <div className="security-option">
-                  <div>
-                    <strong>Controle por perfil</strong>
-
-                    <p>
-                      Administrador, Recepção e Portaria terão permissões
-                      diferentes.
-                    </p>
-                  </div>
-
-                  <span className="security-status planned">
-                    Será implementado
-                  </span>
-                </div>
-
-                <div className="security-option">
-                  <div>
-                    <strong>Senhas protegidas</strong>
-
-                    <p>
-                      As senhas serão armazenadas no backend utilizando
-                      hash seguro.
-                    </p>
-                  </div>
-
-                  <span className="security-status planned">
-                    Será implementado
-                  </span>
-                </div>
-              </div>
+          {erroSenha && (
+            <div className="config-alert error">
+              {erroSenha}
             </div>
           )}
-        </section>
-      </div>
+
+          <div className="config-form-actions">
+            <button
+              type="submit"
+              className="config-button"
+              disabled={alterandoSenha}
+            >
+              {alterandoSenha
+                ? 'Alterando...'
+                : 'Alterar senha'}
+            </button>
+          </div>
+        </form>
+      </section>
     </div>
   )
 }

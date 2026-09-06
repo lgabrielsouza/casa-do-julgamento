@@ -5,13 +5,24 @@ import br.org.casadojulgamento.domain.enums.UserRole;
 import java.time.LocalDateTime;
 
 public record UserResponse(
-    Long id,
-    String nome,
-    String email,
-    String telefone,
-    UserRole role,
-    Boolean ativo,
-    LocalDateTime createdAt,
-    LocalDateTime updatedAt
+
+        Long id,
+
+        String nome,
+
+        String email,
+
+        String telefone,
+
+        String fotoPerfil,
+
+        UserRole role,
+
+        Boolean ativo,
+
+        LocalDateTime createdAt,
+
+        LocalDateTime updatedAt
+
 ) {
 }

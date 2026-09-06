@@ -12,3 +12,7 @@ spring:
         format_sql: true
 
     show-sql: false
+
+app:
+  storage:
+    profile-images-dir: ./uploads/profile-images

@@ -17,3 +17,7 @@ security:
   jwt:
     secret: teste-casa-do-julgamento-chave-jwt-segura-123456789
     expiration-ms: 86400000
+
+app:
+  storage:
+    profile-images-dir: ./target/test-profile-images

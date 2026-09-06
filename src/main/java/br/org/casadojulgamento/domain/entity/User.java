@@ -31,6 +31,9 @@ public class User {
     @Column(length = 20)
     private String telefone;
 
+    @Column(name = "foto_perfil", length = 500)
+    private String fotoPerfil;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private UserRole role;

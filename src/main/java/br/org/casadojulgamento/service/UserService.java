@@ -11,8 +11,12 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MultipartFile;
 import br.org.casadojulgamento.api.dto.user.UpdateUserRequest;
 import br.org.casadojulgamento.api.dto.user.ResetUserPasswordRequest;
+import br.org.casadojulgamento.api.dto.user.UpdateMyProfileRequest;
+import br.org.casadojulgamento.api.dto.user.ChangeMyPasswordRequest;
 
 import java.util.List;
 import java.util.Locale;
@@ -37,7 +41,7 @@ public class UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
-                                "Usuário não encontrado."
+                                "UsuÃ¡rio nÃ£o encontrado."
                         )
                 );
 
@@ -52,7 +56,7 @@ public class UserService {
 
         if (userRepository.existsByEmail(emailNormalizado)) {
             throw new BusinessException(
-                    "Já existe um usuário com este e-mail."
+                    "JÃ¡ existe um usuÃ¡rio com este e-mail."
             );
         }
 
@@ -71,12 +75,12 @@ public class UserService {
 
         } catch (DataIntegrityViolationException exception) {
             /*
-             * A verificação existsByEmail melhora a experiência,
-             * mas a constraint UNIQUE do PostgreSQL é a proteção definitiva
-             * contra requisições concorrentes.
+             * A verificaÃ§Ã£o existsByEmail melhora a experiÃªncia,
+             * mas a constraint UNIQUE do PostgreSQL Ã© a proteÃ§Ã£o definitiva
+             * contra requisiÃ§Ãµes concorrentes.
              */
             throw new BusinessException(
-                    "Já existe um usuário com este e-mail."
+                    "JÃ¡ existe um usuÃ¡rio com este e-mail."
             );
         }
     }
@@ -90,16 +94,16 @@ public class UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
-                                "Usuário não encontrado."
+                                "UsuÃ¡rio nÃ£o encontrado."
                         )
                 );
 
         if (id.equals(usuarioLogadoId)
                 && user.getRole() != request.role()) {
             throw new BusinessException(
-                    "Você não pode alterar o próprio perfil de acesso."
+                    "VocÃª nÃ£o pode alterar o prÃ³prio perfil de acesso."
             );
-        }        
+        }
 
         String emailNormalizado = request.email()
                 .trim()
@@ -108,7 +112,7 @@ public class UserService {
         if (!user.getEmail().equals(emailNormalizado)
                 && userRepository.existsByEmail(emailNormalizado)) {
             throw new BusinessException(
-                    "Já existe um usuário com este e-mail."
+                    "JÃ¡ existe um usuÃ¡rio com este e-mail."
             );
         }
 
@@ -125,7 +129,7 @@ public class UserService {
 
         } catch (DataIntegrityViolationException exception) {
             throw new BusinessException(
-                    "Já existe um usuário com este e-mail."
+                    "JÃ¡ existe um usuÃ¡rio com este e-mail."
             );
         }
     }
@@ -139,13 +143,13 @@ public class UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
-                                "Usuário não encontrado."
+                                "UsuÃ¡rio nÃ£o encontrado."
                         )
                 );
 
         if (id.equals(usuarioLogadoId) && !ativo) {
             throw new BusinessException(
-                    "Você não pode desativar a própria conta."
+                    "VocÃª nÃ£o pode desativar a prÃ³pria conta."
             );
         }
 
@@ -165,7 +169,7 @@ public class UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
-                                "Usuário não encontrado."
+                                "UsuÃ¡rio nÃ£o encontrado."
                         )
                 );
 
@@ -174,7 +178,65 @@ public class UserService {
         );
 
         userRepository.saveAndFlush(user);
-}
+        }
+
+        @Transactional
+        public UserResponse atualizarMeuPerfil(
+                Long usuarioLogadoId,
+                UpdateMyProfileRequest request
+        ) {
+        User user = userRepository.findById(usuarioLogadoId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "UsuÃ¡rio nÃ£o encontrado."
+                        )
+                );
+
+        user.setNome(request.nome().trim());
+        user.setTelefone(normalizarTelefone(request.telefone()));
+
+        User usuarioAtualizado =
+                userRepository.saveAndFlush(user);
+
+        return toResponse(usuarioAtualizado);
+        }
+
+        @Transactional
+        public void alterarMinhaSenha(
+                Long usuarioLogadoId,
+                ChangeMyPasswordRequest request
+        ) {
+        User user = userRepository.findById(usuarioLogadoId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "UsuÃ¡rio nÃ£o encontrado."
+                        )
+                );
+
+        if (!passwordEncoder.matches(
+                request.senhaAtual(),
+                user.getSenha()
+        )) {
+                throw new BusinessException(
+                        "A senha atual estÃ¡ incorreta."
+                );
+        }
+
+        if (passwordEncoder.matches(
+                request.novaSenha(),
+                user.getSenha()
+        )) {
+                throw new BusinessException(
+                        "A nova senha deve ser diferente da senha atual."
+                );
+        }
+
+        user.setSenha(
+                passwordEncoder.encode(request.novaSenha())
+        );
+
+        userRepository.saveAndFlush(user);
+        }
 
     private String normalizarTelefone(String telefone) {
         if (telefone == null || telefone.isBlank()) {
@@ -190,10 +252,68 @@ public class UserService {
                 user.getNome(),
                 user.getEmail(),
                 user.getTelefone(),
+                user.getFotoPerfil(),
                 user.getRole(),
                 user.getAtivo(),
                 user.getCreatedAt(),
                 user.getUpdatedAt()
         );
     }
+    private final ProfileImageStorageService profileImageStorageService;
+
+    @Transactional
+        public UserResponse atualizarFotoPerfil(
+                Long usuarioLogadoId,
+                MultipartFile arquivo
+        ) {
+        User user = userRepository.findById(usuarioLogadoId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "UsuÃ¡rio nÃ£o encontrado."
+                        )
+                );
+
+        String fotoAnterior = user.getFotoPerfil();
+
+        String novaFoto =
+                profileImageStorageService.salvar(arquivo);
+
+        user.setFotoPerfil(novaFoto);
+
+        User usuarioAtualizado =
+                userRepository.saveAndFlush(user);
+
+        if (fotoAnterior != null &&
+                !fotoAnterior.isBlank()) {
+                profileImageStorageService.excluir(fotoAnterior);
+        }
+
+        return toResponse(usuarioAtualizado);
+        }
+
+     @Transactional
+        public UserResponse removerFotoPerfil(
+                Long usuarioLogadoId
+        ) {
+        User user = userRepository.findById(usuarioLogadoId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "UsuÃ¡rio nÃ£o encontrado."
+                        )
+                );
+
+        String fotoAnterior = user.getFotoPerfil();
+
+        user.setFotoPerfil(null);
+
+        User usuarioAtualizado =
+                userRepository.saveAndFlush(user);
+
+        if (fotoAnterior != null &&
+                !fotoAnterior.isBlank()) {
+                profileImageStorageService.excluir(fotoAnterior);
+        }
+
+        return toResponse(usuarioAtualizado);
+        }
 }

@@ -1,142 +1,123 @@
 .configuracoes-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-width: 950px;
+}
+
+.configuracoes-header h1 {
+  margin: 4px 0 8px;
+}
+
+.configuracoes-header p {
+  margin: 0;
+}
+
+.configuracoes-subtitle {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  opacity: 0.65;
+}
+
+.config-card {
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 12px;
+  padding: 24px;
+}
+
+.config-card-header {
+  margin-bottom: 22px;
+}
+
+.config-card-header h2 {
+  margin: 0 0 6px;
+}
+
+.config-card-header p {
+  margin: 0;
+  opacity: 0.7;
+}
+
+.profile-photo-area {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.profile-photo-preview {
+  width: 110px;
+  height: 110px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #171717;
+  color: #fff;
+  font-size: 38px;
+  font-weight: 700;
+}
+
+.profile-photo-preview img {
   width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
-.configuracoes-heading {
-  margin-bottom: 26px;
+.profile-photo-actions {
+  display: flex;
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 10px;
 }
 
-.configuracoes-eyebrow {
-  margin-bottom: 5px;
-  color: #b00000;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 1.3px;
-  text-transform: uppercase;
+.profile-photo-actions small,
+.config-field small {
+  opacity: 0.65;
 }
 
-.configuracoes-heading h1 {
-  margin-bottom: 7px;
-  color: #181818;
-  font-size: 30px;
-}
-
-.configuracoes-heading > div > p:last-child {
-  color: #777777;
-  font-size: 14px;
-}
-
-/* LAYOUT */
-
-.configuracoes-layout {
+.config-form {
   display: grid;
-  grid-template-columns: 220px 1fr;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
   gap: 20px;
 }
 
-/* MENU */
-
-.configuracoes-menu {
-  align-self: start;
-  display: flex;
-  flex-direction: column;
-  padding: 10px;
-  border: 1px solid #e5e5e5;
-  border-radius: 11px;
-  background: #ffffff;
-}
-
-.configuracoes-menu button {
-  min-height: 43px;
-  padding: 0 13px;
-  border: none;
-  border-radius: 7px;
-  cursor: pointer;
-  background: transparent;
-  color: #666666;
-  text-align: left;
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.configuracoes-menu button:hover {
-  background: #f5f5f5;
-  color: #222222;
-}
-
-.configuracoes-menu button.active {
-  background: #b00000;
-  color: #ffffff;
-}
-
-/* CONTEÚDO */
-
-.configuracoes-content {
-  min-width: 0;
-}
-
-.config-section {
-  padding: 24px;
-  border: 1px solid #e5e5e5;
-  border-radius: 12px;
-  background: #ffffff;
-}
-
-.config-section-header {
-  margin-bottom: 22px;
-  padding-bottom: 17px;
-  border-bottom: 1px solid #eeeeee;
-}
-
-.config-section-header h2 {
-  margin-bottom: 5px;
-  color: #222222;
-  font-size: 18px;
-}
-
-.config-section-header p {
-  color: #8d8d8d;
-  font-size: 10px;
-}
-
-/* FORM */
-
-.config-form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-}
-
-.config-form-group {
+.config-field {
   display: flex;
   flex-direction: column;
   gap: 7px;
-  margin-bottom: 18px;
 }
 
-.config-form-group label {
-  color: #333333;
-  font-size: 11px;
-  font-weight: 700;
+.config-field label {
+  font-size: 14px;
+  font-weight: 600;
 }
 
-.config-form-group input,
-.config-form-group select {
-  width: 100%;
-  height: 43px;
+.config-field input {
+  min-height: 44px;
   padding: 0 12px;
-  border: 1px solid #dcdcdc;
-  border-radius: 8px;
-  outline: none;
-  background: #fafafa;
-  color: #333333;
-  font-size: 12px;
+  border: 1px solid #d7d7d7;
+  border-radius: 7px;
+  font: inherit;
 }
 
-.config-form-group input:focus,
-.config-form-group select:focus {
-  border-color: #b00000;
-  background: #ffffff;
+.config-field input:focus {
+  outline: none;
+  border-color: #222;
+}
+
+.config-field input:disabled {
+  background: #f4f4f4;
+  cursor: not-allowed;
+}
+
+.config-form-actions,
+.config-alert {
+  grid-column: 1 / -1;
 }
 
 .config-form-actions {
@@ -144,238 +125,59 @@
   justify-content: flex-end;
 }
 
-.config-form-actions button {
-  min-height: 41px;
-  padding: 0 17px;
-  border: none;
-  border-radius: 8px;
+.config-button {
+  border: 0;
+  border-radius: 7px;
+  background: #181818;
+  color: #fff;
+  padding: 11px 18px;
+  font: inherit;
+  font-weight: 600;
   cursor: pointer;
-  background: #b00000;
-  color: #ffffff;
-  font-size: 11px;
-  font-weight: 800;
 }
 
-.config-form-actions button:hover {
-  background: #8f0000;
-}
-
-/* INTEGRAÇÃO */
-
-.integration-card {
-  margin-bottom: 18px;
-  padding: 19px;
-  border: 1px solid #e8e8e8;
-  border-radius: 10px;
-  background: #fafafa;
-}
-
-.integration-card-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 15px;
-  margin-bottom: 12px;
-}
-
-.integration-card-header > div > span {
-  display: block;
-  margin-bottom: 4px;
-  color: #b00000;
-  font-size: 8px;
-  font-weight: 800;
-  text-transform: uppercase;
-}
-
-.integration-card-header h3 {
-  color: #242424;
-  font-size: 17px;
-}
-
-.integration-status {
-  padding: 5px 9px;
-  border-radius: 20px;
-  font-size: 8px;
-  font-weight: 800;
-}
-
-.integration-status.manual {
-  background: #fff5e6;
-  color: #a76700;
-}
-
-.integration-card > p {
-  margin-bottom: 16px;
-  color: #777777;
-  font-size: 10px;
-  line-height: 1.6;
-}
-
-.integration-details {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 9px;
-  margin-bottom: 15px;
-}
-
-.integration-details > div {
-  display: flex;
-  flex-direction: column;
-  padding: 11px;
-  border: 1px solid #eeeeee;
-  border-radius: 7px;
-  background: #ffffff;
-}
-
-.integration-details span {
-  margin-bottom: 4px;
-  color: #999999;
-  font-size: 8px;
-  text-transform: uppercase;
-}
-
-.integration-details strong {
-  color: #333333;
-  font-size: 10px;
-}
-
-.integration-warning {
-  padding: 13px 14px;
-  border-left: 4px solid #b00000;
-  border-radius: 7px;
-  background: #fff5f5;
-}
-
-.integration-warning strong {
-  display: block;
-  margin-bottom: 5px;
-  color: #8f0000;
-  font-size: 10px;
-}
-
-.integration-warning p {
-  color: #666666;
-  font-size: 9px;
-  line-height: 1.6;
-}
-
-/* FUTURO */
-
-.future-integration {
-  padding: 18px;
-  border: 1px dashed #cccccc;
-  border-radius: 10px;
-}
-
-.future-integration > span {
-  display: block;
-  margin-bottom: 4px;
-  color: #777777;
-  font-size: 8px;
-  font-weight: 800;
-  text-transform: uppercase;
-}
-
-.future-integration h3 {
-  margin-bottom: 6px;
-  color: #333333;
-  font-size: 15px;
-}
-
-.future-integration p {
-  margin-bottom: 13px;
-  color: #888888;
-  font-size: 9px;
-  line-height: 1.6;
-}
-
-.future-integration button {
-  min-height: 37px;
-  padding: 0 13px;
-  border: 1px solid #dddddd;
-  border-radius: 7px;
+.config-button.secondary {
   background: #eeeeee;
-  color: #999999;
-  font-size: 9px;
-  font-weight: 800;
+  color: #222;
 }
 
-/* SEGURANÇA */
-
-.security-options {
-  display: flex;
-  flex-direction: column;
-  gap: 11px;
+.config-button:disabled,
+.config-button.disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
-.security-option {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  padding: 16px;
-  border: 1px solid #eeeeee;
-  border-radius: 8px;
-  background: #fafafa;
+.config-alert {
+  padding: 11px 14px;
+  border-radius: 7px;
+  font-size: 14px;
 }
 
-.security-option strong {
-  display: block;
-  margin-bottom: 4px;
-  color: #333333;
-  font-size: 11px;
+.config-alert.success {
+  background: #edf8ef;
+  color: #17642a;
 }
 
-.security-option p {
-  color: #888888;
-  font-size: 9px;
-  line-height: 1.5;
-}
-
-.security-status {
-  flex-shrink: 0;
-  padding: 5px 8px;
-  border-radius: 20px;
-  font-size: 8px;
-  font-weight: 800;
-}
-
-.security-status.planned {
-  background: #eef3ff;
-  color: #345da7;
-}
-
-@media (max-width: 950px) {
-  .configuracoes-layout {
-    grid-template-columns: 1fr;
-  }
-
-  .configuracoes-menu {
-    flex-direction: row;
-    overflow-x: auto;
-  }
-
-  .configuracoes-menu button {
-    flex-shrink: 0;
-  }
-
-  .integration-details {
-    grid-template-columns: repeat(2, 1fr);
-  }
+.config-alert.error {
+  background: #fff0f0;
+  color: #a51d1d;
 }
 
 @media (max-width: 700px) {
-  .config-form-row {
-    grid-template-columns: 1fr;
-    gap: 0;
-  }
-
-  .integration-details {
+  .config-form {
     grid-template-columns: 1fr;
   }
 
-  .security-option {
+  .profile-photo-area {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .config-form-actions {
+    justify-content: stretch;
+  }
+
+  .config-form-actions .config-button {
+    width: 100%;
   }
 }

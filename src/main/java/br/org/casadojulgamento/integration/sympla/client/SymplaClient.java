@@ -11,8 +11,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -34,9 +32,11 @@ public class SymplaClient {
     private final SymplaProperties properties;
 
     public JsonNode buscarEventos() {
+
         validarTokenConfigurado();
 
         try {
+
             return symplaRestClient
                     .get()
                     .uri(uriBuilder ->
@@ -59,19 +59,18 @@ public class SymplaClient {
                                 throw criarExcecaoApi(
                                         response
                                                 .getStatusCode()
-                                                .value(),
-                                        response
-                                                .getBody()
-                                                .readAllBytes()
+                                                .value()
                                 );
                             }
                     )
                     .body(JsonNode.class);
 
         } catch (SymplaApiException exception) {
+
             throw exception;
 
         } catch (RestClientException exception) {
+
             throw new SymplaApiException(
                     "Não foi possível comunicar com a API da Sympla.",
                     503,
@@ -83,6 +82,7 @@ public class SymplaClient {
     public SymplaParticipantsResponse buscarParticipantes(
             String externalEventId
     ) {
+
         validarTokenConfigurado();
         validarExternalEventId(externalEventId);
 
@@ -106,9 +106,12 @@ public class SymplaClient {
         );
 
         int totalPaginas =
-                calcularTotalPaginas(primeiraPagina);
+                calcularTotalPaginas(
+                        primeiraPagina
+                );
 
         if (totalPaginas > MAX_PAGES) {
+
             throw new SymplaApiException(
                     "A API da Sympla retornou uma quantidade de páginas acima do limite permitido.",
                     502
@@ -120,6 +123,7 @@ public class SymplaClient {
                 pagina <= totalPaginas;
                 pagina++
         ) {
+
             SymplaParticipantsResponse respostaPagina =
                     buscarPaginaParticipantes(
                             externalEventId,
@@ -149,12 +153,13 @@ public class SymplaClient {
         );
     }
 
-    private SymplaParticipantsResponse
-    buscarPaginaParticipantes(
+    private SymplaParticipantsResponse buscarPaginaParticipantes(
             String externalEventId,
             int pagina
     ) {
+
         try {
+
             return symplaRestClient
                     .get()
                     .uri(uriBuilder ->
@@ -174,7 +179,9 @@ public class SymplaClient {
                                             "cancelled_filter",
                                             "include"
                                     )
-                                    .build(externalEventId)
+                                    .build(
+                                            externalEventId
+                                    )
                     )
                     .header(
                             "s_token",
@@ -187,10 +194,7 @@ public class SymplaClient {
                                 throw criarExcecaoApi(
                                         response
                                                 .getStatusCode()
-                                                .value(),
-                                        response
-                                                .getBody()
-                                                .readAllBytes()
+                                                .value()
                                 );
                             }
                     )
@@ -199,9 +203,11 @@ public class SymplaClient {
                     );
 
         } catch (SymplaApiException exception) {
+
             throw exception;
 
         } catch (RestClientException exception) {
+
             throw new SymplaApiException(
                     "Não foi possível buscar a página "
                             + pagina
@@ -217,6 +223,7 @@ public class SymplaClient {
                     participantesPorId,
             SymplaParticipantsResponse response
     ) {
+
         if (
                 response == null
                         || response.data() == null
@@ -228,6 +235,7 @@ public class SymplaClient {
                 SymplaParticipantResponse participant
                 : response.data()
         ) {
+
             if (
                     participant == null
                             || participant.id() == null
@@ -246,6 +254,7 @@ public class SymplaClient {
     private int calcularTotalPaginas(
             SymplaParticipantsResponse response
     ) {
+
         if (
                 response == null
                         || response.pagination() == null
@@ -280,60 +289,69 @@ public class SymplaClient {
         );
     }
 
-        public JsonNode buscarApresentacoes(
-                String externalEventId
-        ) {
+    public JsonNode buscarApresentacoes(
+            String externalEventId
+    ) {
+
         validarTokenConfigurado();
-        validarExternalEventId(externalEventId);
+        validarExternalEventId(
+                externalEventId
+        );
 
         try {
-                return symplaRestClient
-                        .get()
-                        .uri(uriBuilder ->
-                                uriBuilder
-                                        .path(
-                                                "/v1.6.0/events/{eventId}/presentations"
-                                        )
-                                        .queryParam(
-                                                "page_size",
-                                                DEFAULT_PAGE_SIZE
-                                        )
-                                        .build(externalEventId)
-                        )
-                        .header(
-                                "s_token",
-                                properties.token()
-                        )
-                        .retrieve()
-                        .onStatus(
-                                HttpStatusCode::isError,
-                                (request, response) -> {
+
+            return symplaRestClient
+                    .get()
+                    .uri(uriBuilder ->
+                            uriBuilder
+                                    .path(
+                                            "/v1.6.0/events/{eventId}/presentations"
+                                    )
+                                    .queryParam(
+                                            "page_size",
+                                            DEFAULT_PAGE_SIZE
+                                    )
+                                    .build(
+                                            externalEventId
+                                    )
+                    )
+                    .header(
+                            "s_token",
+                            properties.token()
+                    )
+                    .retrieve()
+                    .onStatus(
+                            HttpStatusCode::isError,
+                            (request, response) -> {
                                 throw criarExcecaoApi(
                                         response
                                                 .getStatusCode()
-                                                .value(),
-                                        response
-                                                .getBody()
-                                                .readAllBytes()
+                                                .value()
                                 );
-                                }
-                        )
-                        .body(JsonNode.class);
+                            }
+                    )
+                    .body(
+                            JsonNode.class
+                    );
 
         } catch (SymplaApiException exception) {
-                throw exception;
+
+            throw exception;
 
         } catch (RestClientException exception) {
-                throw new SymplaApiException(
-                        "Não foi possível buscar as apresentações do evento na Sympla.",
-                        503,
-                        exception
-                );
+
+            throw new SymplaApiException(
+                    "Não foi possível buscar as apresentações do evento na Sympla.",
+                    503,
+                    exception
+            );
         }
-        }
+    }
 
     private void validarTokenConfigurado() {
+
         if (!properties.hasToken()) {
+
             throw new SymplaApiException(
                     "O token da API da Sympla não está configurado.",
                     503
@@ -344,45 +362,47 @@ public class SymplaClient {
     private void validarExternalEventId(
             String externalEventId
     ) {
+
         if (
                 externalEventId == null
                         || externalEventId.isBlank()
         ) {
+
             throw new IllegalArgumentException(
                     "O identificador externo do evento é obrigatório."
             );
         }
     }
 
+    /*
+     * O corpo retornado pela Sympla não é incluído na mensagem
+     * da exceção.
+     *
+     * A resposta externa pode conter informações que não devem
+     * ser propagadas para logs ou respostas internas da aplicação.
+     */
     private SymplaApiException criarExcecaoApi(
-            int statusCode,
-            byte[] responseBody
-    ) throws IOException {
-        String body = new String(
-                responseBody,
-                StandardCharsets.UTF_8
-        );
+            int statusCode
+    ) {
 
-        String message = switch (statusCode) {
-            case 401 ->
-                    "Token da API da Sympla inválido ou expirado.";
+        String message =
+                switch (statusCode) {
 
-            case 403 ->
-                    "A conta não possui permissão para acessar este recurso da Sympla.";
+                    case 401 ->
+                            "Token da API da Sympla inválido ou expirado.";
 
-            case 404 ->
-                    "O recurso solicitado não foi encontrado na Sympla.";
+                    case 403 ->
+                            "A conta não possui permissão para acessar este recurso da Sympla.";
 
-            case 429 ->
-                    "O limite de requisições da API da Sympla foi atingido.";
+                    case 404 ->
+                            "O recurso solicitado não foi encontrado na Sympla.";
 
-            default ->
-                    "Erro ao consultar a API da Sympla.";
-        };
+                    case 429 ->
+                            "O limite de requisições da API da Sympla foi atingido.";
 
-        if (!body.isBlank()) {
-            message += " Resposta: " + body;
-        }
+                    default ->
+                            "Erro ao consultar a API da Sympla.";
+                };
 
         return new SymplaApiException(
                 message,

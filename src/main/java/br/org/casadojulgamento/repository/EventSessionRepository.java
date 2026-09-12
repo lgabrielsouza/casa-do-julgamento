@@ -30,6 +30,12 @@ public interface EventSessionRepository
             Long id
     );
 
+    Optional<EventSession> findByEventIdAndDateAndStartTimeAndActiveTrue(
+            Long eventId,
+            LocalDate date,
+            LocalTime startTime
+    );
+
     List<EventSession> findAllByEventIdAndDateBetweenAndActiveTrue(
             Long eventId,
             LocalDate startDate,

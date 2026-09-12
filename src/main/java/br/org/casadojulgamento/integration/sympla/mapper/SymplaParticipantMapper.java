@@ -21,9 +21,11 @@ public class SymplaParticipantMapper {
             SymplaParticipantResponse dto,
             Event event
     ) {
+
         return Participant.builder()
                 .event(event)
                 .eventSession(null)
+                .originalEventSession(null)
                 .fullName(normalizarNome(dto.fullName()))
                 .email(normalizarTexto(dto.email()))
                 .phone(null)
@@ -42,6 +44,7 @@ public class SymplaParticipantMapper {
             Participant participant,
             SymplaParticipantResponse dto
     ) {
+
         return ParticipantIntegration.builder()
                 .participant(participant)
                 .provider(IntegrationProvider.SYMPLA)
@@ -69,6 +72,7 @@ public class SymplaParticipantMapper {
             ParticipantIntegration integration,
             SymplaParticipantResponse dto
     ) {
+
         Participant participant =
                 integration.getParticipant();
 
@@ -100,16 +104,21 @@ public class SymplaParticipantMapper {
 
         /*
          * Nome e e-mail podem ser atualizados pela Sympla.
+         *
          * Telefone, sessão, chegada, observações e demais
          * informações operacionais continuam preservados.
+         *
+         * A associação da sessão escolhida na Sympla é tratada
+         * pelo SymplaSyncService, pois depende de consulta
+         * ao banco de dados.
          */
 
         if (
                 novoNome != null
                         && !Objects.equals(
-                                participant.getFullName(),
-                                novoNome
-                        )
+                        participant.getFullName(),
+                        novoNome
+                )
         ) {
             participant.setFullName(novoNome);
             alterado = true;
@@ -118,9 +127,9 @@ public class SymplaParticipantMapper {
         if (
                 novoEmail != null
                         && !Objects.equals(
-                                participant.getEmail(),
-                                novoEmail
-                        )
+                        participant.getEmail(),
+                        novoEmail
+                )
         ) {
             participant.setEmail(novoEmail);
             alterado = true;
@@ -207,6 +216,7 @@ public class SymplaParticipantMapper {
             Participant participant,
             ParticipantStatus novoStatus
     ) {
+
         if (
                 participant.getSource()
                         != ParticipantSource.SYMPLA
@@ -235,6 +245,7 @@ public class SymplaParticipantMapper {
     private ParticipantStatus obterStatusParticipante(
             SymplaParticipantResponse dto
     ) {
+
         if (estaCancelado(dto)) {
             return ParticipantStatus.CANCELLED;
         }
@@ -245,6 +256,7 @@ public class SymplaParticipantMapper {
     private boolean estaCancelado(
             SymplaParticipantResponse dto
     ) {
+
         return statusRepresentaCancelamento(
                 dto.ticketStatus()
         ) || statusRepresentaCancelamento(
@@ -255,6 +267,7 @@ public class SymplaParticipantMapper {
     private boolean statusRepresentaCancelamento(
             String status
     ) {
+
         String normalizado =
                 normalizarStatus(status);
 
@@ -272,7 +285,9 @@ public class SymplaParticipantMapper {
     private String normalizarStatus(
             String valor
     ) {
-        String texto = normalizarTexto(valor);
+
+        String texto =
+                normalizarTexto(valor);
 
         return texto == null
                 ? null
@@ -282,16 +297,19 @@ public class SymplaParticipantMapper {
     private boolean obterCheckin(
             SymplaParticipantResponse dto
     ) {
+
         return dto.checkin() != null
                 && Boolean.TRUE.equals(
-                        dto.checkin().checkIn()
-                );
+                dto.checkin().checkIn()
+        );
     }
 
     private String normalizarNome(
             String valor
     ) {
-        String nome = normalizarTexto(valor);
+
+        String nome =
+                normalizarTexto(valor);
 
         if (nome == null) {
             return "Participante sem nome";
@@ -300,17 +318,19 @@ public class SymplaParticipantMapper {
         return nome;
     }
 
-        private String normalizarTexto(
-                String valor
-        ) {
+    private String normalizarTexto(
+            String valor
+    ) {
+
         if (valor == null) {
-                return null;
+            return null;
         }
 
-        String normalizado = valor.trim();
+        String normalizado =
+                valor.trim();
 
         return normalizado.isEmpty()
                 ? null
                 : normalizado;
-        }
+    }
 }

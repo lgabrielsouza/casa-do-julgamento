@@ -100,7 +100,7 @@ public class ParticipantGroupService {
         );
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public List<SessionGroupAvailabilityResponse>
     buscarDisponibilidadeDasSessoes(
             Long eventId
@@ -127,13 +127,27 @@ public class ParticipantGroupService {
                                     0
                             );
 
-                    ParticipantGroup group =
-                            garantirGrupoDaSessao(
-                                    session.getId()
-                            );
-
+                    /*
+                     * Consultar a disponibilidade não deve criar
+                     * registros no banco.
+                     *
+                     * Se a sessão ainda não possuir grupo,
+                     * ela é apresentada operacionalmente como FORMING.
+                     *
+                     * O grupo será criado somente quando houver
+                     * uma operação real de alocação.
+                     */
                     ParticipantGroupStatus groupStatus =
-                            group.getStatus();
+                            groupRepository
+                                    .findByEventSessionIdAndActiveTrue(
+                                            session.getId()
+                                    )
+                                    .map(
+                                            ParticipantGroup::getStatus
+                                    )
+                                    .orElse(
+                                            ParticipantGroupStatus.FORMING
+                                    );
 
                     return new SessionGroupAvailabilityResponse(
                             session.getId(),

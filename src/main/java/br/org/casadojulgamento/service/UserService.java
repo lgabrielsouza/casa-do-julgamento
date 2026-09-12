@@ -15,6 +15,8 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -273,17 +275,15 @@ public class UserService {
         String novaFoto =
                 profileImageStorageService.salvar(arquivo);
 
+        registrarSincronizacaoTrocaFoto(
+                fotoAnterior,
+                novaFoto
+        );
+
         user.setFotoPerfil(novaFoto);
 
         User usuarioAtualizado =
                 userRepository.saveAndFlush(user);
-
-        if (fotoAnterior != null
-                && !fotoAnterior.isBlank()) {
-            profileImageStorageService.excluir(
-                    fotoAnterior
-            );
-        }
 
         return toResponse(usuarioAtualizado);
     }
@@ -306,14 +306,94 @@ public class UserService {
         User usuarioAtualizado =
                 userRepository.saveAndFlush(user);
 
-        if (fotoAnterior != null
-                && !fotoAnterior.isBlank()) {
-            profileImageStorageService.excluir(
-                    fotoAnterior
+        registrarExclusaoAposCommit(fotoAnterior);
+
+        return toResponse(usuarioAtualizado);
+    }
+
+    private void registrarSincronizacaoTrocaFoto(
+            String fotoAnterior,
+            String novaFoto
+    ) {
+        if (!TransactionSynchronizationManager
+                .isSynchronizationActive()) {
+
+            profileImageStorageService.excluir(novaFoto);
+
+            throw new IllegalStateException(
+                    "Transação necessária para atualizar a foto de perfil."
             );
         }
 
-        return toResponse(usuarioAtualizado);
+        TransactionSynchronizationManager.registerSynchronization(
+                new TransactionSynchronization() {
+
+                    @Override
+                    public void afterCommit() {
+                        excluirSeExistir(fotoAnterior);
+                    }
+
+                    @Override
+                    public void afterCompletion(int status) {
+                        if (status
+                                != TransactionSynchronization.STATUS_COMMITTED) {
+
+                            excluirSeExistir(novaFoto);
+                        }
+                    }
+                }
+        );
+    }
+
+    private void registrarExclusaoAposCommit(
+            String nomeArquivo
+    ) {
+        if (nomeArquivo == null
+                || nomeArquivo.isBlank()) {
+            return;
+        }
+
+        if (!TransactionSynchronizationManager
+                .isSynchronizationActive()) {
+
+            throw new IllegalStateException(
+                    "Transação necessária para remover a foto de perfil."
+            );
+        }
+
+        TransactionSynchronizationManager.registerSynchronization(
+                new TransactionSynchronization() {
+
+                    @Override
+                    public void afterCommit() {
+                        excluirSeExistir(nomeArquivo);
+                    }
+                }
+        );
+    }
+
+    private void excluirSeExistir(
+            String nomeArquivo
+    ) {
+        if (nomeArquivo == null
+                || nomeArquivo.isBlank()) {
+            return;
+        }
+
+        try {
+            profileImageStorageService.excluir(nomeArquivo);
+        } catch (RuntimeException exception) {
+            /*
+             * O commit do banco já ocorreu.
+             *
+             * Uma falha ao limpar o arquivo antigo não deve
+             * transformar uma atualização já confirmada no banco
+             * em erro para o usuário.
+             *
+             * O arquivo poderá ser removido posteriormente por
+             * uma rotina de limpeza.
+             */
+        }
     }
 
     private String normalizarTelefone(

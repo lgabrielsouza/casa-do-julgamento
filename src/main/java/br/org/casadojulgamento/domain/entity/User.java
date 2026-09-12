@@ -42,6 +42,11 @@ public class User {
     @Builder.Default
     private Boolean ativo = true;
 
+    @Column(name = "token_version", nullable = false)
+    @Builder.Default
+    private Integer tokenVersion = 0;
+
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 

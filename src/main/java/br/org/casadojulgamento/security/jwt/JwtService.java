@@ -3,7 +3,6 @@ package br.org.casadojulgamento.security.jwt;
 import br.org.casadojulgamento.security.service.SecurityUser;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,30 +27,58 @@ public class JwtService {
         key = Keys.hmacShaKeyFor(secret.getBytes());
     }
 
-    public String generateToken(SecurityUser user) {
+   public String generateToken(SecurityUser user) {
 
-        Date now = new Date();
+    Date now = new Date();
 
-        Date expirationDate = new Date(now.getTime() + expiration);
+    Date expirationDate =
+            new Date(now.getTime() + expiration);
 
-        return Jwts.builder()
-                .subject(user.getUsername())
-                .claim("role", user.getUser().getRole().name())
-                .issuedAt(now)
-                .expiration(expirationDate)
-                .signWith(key)
-                .compact();
+    return Jwts.builder()
+            .subject(user.getUsername())
+            .claim(
+                    "role",
+                    user.getUser()
+                            .getRole()
+                            .name()
+            )
+            .claim(
+                    "tokenVersion",
+                    user.getUser()
+                            .getTokenVersion()
+            )
+            .issuedAt(now)
+            .expiration(expirationDate)
+            .signWith(key)
+            .compact();
     }
 
     public String extractUsername(String token) {
         return extractClaims(token).getSubject();
     }
 
-    public boolean isTokenValid(String token, SecurityUser user) {
+    public boolean isTokenValid(
+            String token,
+            SecurityUser user
+    ) {
 
-        return extractUsername(token).equals(user.getUsername())
-                && !isExpired(token);
+        Claims claims = extractClaims(token);
 
+        Integer tokenVersion =
+                claims.get(
+                        "tokenVersion",
+                        Integer.class
+                );
+
+        return claims.getSubject()
+                .equals(user.getUsername())
+                && !claims.getExpiration()
+                        .before(new Date())
+                && tokenVersion != null
+                && tokenVersion.equals(
+                        user.getUser()
+                                .getTokenVersion()
+                );
     }
 
     private boolean isExpired(String token) {

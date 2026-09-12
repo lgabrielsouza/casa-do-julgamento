@@ -2,6 +2,7 @@ package br.org.casadojulgamento.config;
 
 import br.org.casadojulgamento.security.jwt.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -17,6 +18,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Configuration
@@ -26,19 +28,15 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
+    @Value("${app.cors.allowed-origins}")
+    private String allowedOrigins;
+
     @Bean
     SecurityFilterChain securityFilterChain(
             HttpSecurity http
     ) throws Exception {
 
         http
-                /*
-                 * A aplicação usa JWT stateless enviado pelo
-                 * header Authorization.
-                 *
-                 * Enquanto o token não estiver em cookie,
-                 * o CSRF permanece desabilitado.
-                 */
                 .csrf(csrf ->
                         csrf.disable()
                 )
@@ -57,9 +55,6 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
 
-                        /*
-                         * Recursos públicos.
-                         */
                         .requestMatchers(
                                 "/",
                                 "/index.html",
@@ -73,34 +68,18 @@ public class SecurityConfig {
                         )
                         .permitAll()
 
-                        /*
-                         * Perfil do próprio usuário.
-                         *
-                         * Qualquer usuário autenticado pode
-                         * consultar e editar o próprio perfil.
-                         */
                         .requestMatchers(
                                 "/api/me",
                                 "/api/me/**"
                         )
                         .authenticated()
 
-                        /*
-                         * Administração de usuários.
-                         *
-                         * Somente ADMIN.
-                         */
                         .requestMatchers(
                                 "/api/users",
                                 "/api/users/**"
                         )
                         .hasRole("ADMIN")
 
-                        /*
-                         * Integração Sympla.
-                         *
-                         * ADMIN e COORDENADOR.
-                         */
                         .requestMatchers(
                                 "/api/integrations/sympla",
                                 "/api/integrations/sympla/**"
@@ -110,13 +89,6 @@ public class SecurityConfig {
                                 "COORDENADOR"
                         )
 
-                        /*
-                         * Área operacional do evento.
-                         *
-                         * Os quatro perfis atualmente
-                         * autorizados no sistema podem utilizar
-                         * esses endpoints.
-                         */
                         .requestMatchers(
                                 "/api/events",
                                 "/api/events/**",
@@ -136,13 +108,6 @@ public class SecurityConfig {
                                 "RECEPCAO"
                         )
 
-                        /*
-                         * Segurança por padrão.
-                         *
-                         * Qualquer endpoint que não tenha sido
-                         * explicitamente liberado acima fica
-                         * bloqueado.
-                         */
                         .anyRequest()
                         .denyAll()
                 )
@@ -166,18 +131,14 @@ public class SecurityConfig {
         CorsConfiguration configuration =
                 new CorsConfiguration();
 
-        /*
-         * Ambiente local.
-         *
-         * A origem de produção será configurada
-         * separadamente por variável de ambiente
-         * no bloco de configuração de produção.
-         */
-        configuration.setAllowedOrigins(
-                List.of(
-                        "http://localhost:5173"
+        List<String> origins = Arrays.stream(
+                        allowedOrigins.split(",")
                 )
-        );
+                .map(String::trim)
+                .filter(origin -> !origin.isBlank())
+                .toList();
+
+        configuration.setAllowedOrigins(origins);
 
         configuration.setAllowedMethods(
                 List.of(

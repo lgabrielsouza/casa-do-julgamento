@@ -6,22 +6,17 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.Set;
 import java.util.UUID;
 
 @Service
 public class ProfileImageStorageService {
 
-    private static final long MAX_FILE_SIZE = 5 * 1024 * 1024;
-
-    private static final Set<String> ALLOWED_CONTENT_TYPES = Set.of(
-            "image/jpeg",
-            "image/png",
-            "image/webp"
-    );
+    private static final long MAX_FILE_SIZE =
+            5L * 1024 * 1024;
 
     private final Path storageDirectory;
 
@@ -44,28 +39,25 @@ public class ProfileImageStorageService {
     }
 
     public String salvar(MultipartFile arquivo) {
-        validarArquivo(arquivo);
 
-        String extensao = obterExtensao(
-                arquivo.getContentType()
-        );
+        TipoImagem tipoImagem =
+                validarArquivoEIdentificarTipo(arquivo);
 
         String nomeArquivo =
-                UUID.randomUUID() + extensao;
+                UUID.randomUUID()
+                        + tipoImagem.getExtensao();
 
         Path destino = storageDirectory
                 .resolve(nomeArquivo)
                 .normalize();
 
-        if (!destino.startsWith(storageDirectory)) {
-            throw new BusinessException(
-                    "Caminho de arquivo inválido."
-            );
-        }
+        validarCaminho(destino);
 
-        try {
+        try (InputStream inputStream =
+                     arquivo.getInputStream()) {
+
             Files.copy(
-                    arquivo.getInputStream(),
+                    inputStream,
                     destino,
                     StandardCopyOption.REPLACE_EXISTING
             );
@@ -80,7 +72,9 @@ public class ProfileImageStorageService {
     }
 
     public void excluir(String nomeArquivo) {
-        if (nomeArquivo == null || nomeArquivo.isBlank()) {
+
+        if (nomeArquivo == null ||
+                nomeArquivo.isBlank()) {
             return;
         }
 
@@ -88,14 +82,11 @@ public class ProfileImageStorageService {
                 .resolve(nomeArquivo)
                 .normalize();
 
-        if (!arquivo.startsWith(storageDirectory)) {
-            throw new BusinessException(
-                    "Caminho de arquivo inválido."
-            );
-        }
+        validarCaminho(arquivo);
 
         try {
             Files.deleteIfExists(arquivo);
+
         } catch (IOException e) {
             throw new BusinessException(
                     "Não foi possível excluir a foto de perfil."
@@ -104,51 +95,158 @@ public class ProfileImageStorageService {
     }
 
     public Path localizar(String nomeArquivo) {
+
+        if (nomeArquivo == null ||
+                nomeArquivo.isBlank()) {
+
+            throw new BusinessException(
+                    "Arquivo de imagem inválido."
+            );
+        }
+
         Path arquivo = storageDirectory
                 .resolve(nomeArquivo)
                 .normalize();
 
-        if (!arquivo.startsWith(storageDirectory)) {
-            throw new BusinessException(
-                    "Caminho de arquivo inválido."
-            );
-        }
+        validarCaminho(arquivo);
 
         return arquivo;
     }
 
-    private void validarArquivo(MultipartFile arquivo) {
-        if (arquivo == null || arquivo.isEmpty()) {
+    private TipoImagem validarArquivoEIdentificarTipo(
+            MultipartFile arquivo
+    ) {
+
+        if (arquivo == null ||
+                arquivo.isEmpty()) {
+
             throw new BusinessException(
                     "Selecione uma imagem."
             );
         }
 
         if (arquivo.getSize() > MAX_FILE_SIZE) {
+
             throw new BusinessException(
                     "A imagem deve possuir no máximo 5 MB."
             );
         }
 
-        String contentType = arquivo.getContentType();
+        TipoImagem tipoImagem =
+                identificarTipoReal(arquivo);
 
-        if (contentType == null ||
-                !ALLOWED_CONTENT_TYPES.contains(contentType)) {
+        if (tipoImagem == null) {
 
             throw new BusinessException(
                     "Formato de imagem não permitido. Use JPG, PNG ou WEBP."
             );
         }
+
+        return tipoImagem;
     }
 
-    private String obterExtensao(String contentType) {
-        return switch (contentType) {
-            case "image/jpeg" -> ".jpg";
-            case "image/png" -> ".png";
-            case "image/webp" -> ".webp";
-            default -> throw new BusinessException(
-                    "Formato de imagem não permitido."
+    private TipoImagem identificarTipoReal(
+            MultipartFile arquivo
+    ) {
+
+        byte[] cabecalho = new byte[12];
+
+        int bytesLidos;
+
+        try (InputStream inputStream =
+                     arquivo.getInputStream()) {
+
+            bytesLidos = inputStream.read(cabecalho);
+
+        } catch (IOException e) {
+
+            throw new BusinessException(
+                    "Não foi possível validar a imagem."
             );
-        };
+        }
+
+        if (ehJpeg(cabecalho, bytesLidos)) {
+            return TipoImagem.JPEG;
+        }
+
+        if (ehPng(cabecalho, bytesLidos)) {
+            return TipoImagem.PNG;
+        }
+
+        if (ehWebp(cabecalho, bytesLidos)) {
+            return TipoImagem.WEBP;
+        }
+
+        return null;
+    }
+
+    private boolean ehJpeg(
+            byte[] bytes,
+            int tamanho
+    ) {
+
+        return tamanho >= 3
+                && (bytes[0] & 0xFF) == 0xFF
+                && (bytes[1] & 0xFF) == 0xD8
+                && (bytes[2] & 0xFF) == 0xFF;
+    }
+
+    private boolean ehPng(
+            byte[] bytes,
+            int tamanho
+    ) {
+
+        return tamanho >= 8
+                && (bytes[0] & 0xFF) == 0x89
+                && bytes[1] == 0x50
+                && bytes[2] == 0x4E
+                && bytes[3] == 0x47
+                && bytes[4] == 0x0D
+                && bytes[5] == 0x0A
+                && bytes[6] == 0x1A
+                && bytes[7] == 0x0A;
+    }
+
+    private boolean ehWebp(
+            byte[] bytes,
+            int tamanho
+    ) {
+
+        return tamanho >= 12
+                && bytes[0] == 'R'
+                && bytes[1] == 'I'
+                && bytes[2] == 'F'
+                && bytes[3] == 'F'
+                && bytes[8] == 'W'
+                && bytes[9] == 'E'
+                && bytes[10] == 'B'
+                && bytes[11] == 'P';
+    }
+
+    private void validarCaminho(Path caminho) {
+
+        if (!caminho.startsWith(storageDirectory)) {
+
+            throw new BusinessException(
+                    "Caminho de arquivo inválido."
+            );
+        }
+    }
+
+    private enum TipoImagem {
+
+        JPEG(".jpg"),
+        PNG(".png"),
+        WEBP(".webp");
+
+        private final String extensao;
+
+        TipoImagem(String extensao) {
+            this.extensao = extensao;
+        }
+
+        public String getExtensao() {
+            return extensao;
+        }
     }
 }

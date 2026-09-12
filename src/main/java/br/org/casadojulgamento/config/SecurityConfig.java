@@ -4,6 +4,8 @@ import br.org.casadojulgamento.security.jwt.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -14,8 +16,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+
 import java.util.List;
 
 @Configuration
@@ -26,44 +27,130 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    SecurityFilterChain securityFilterChain(
+            HttpSecurity http
+    ) throws Exception {
 
         http
-            // Temporário enquanto o JWT é enviado pelo header Authorization.
-            // Ao migrarmos para cookies HttpOnly, o CSRF será reconfigurado.
-            .csrf(csrf -> csrf.disable())
+                /*
+                 * A aplicação usa JWT stateless enviado pelo
+                 * header Authorization.
+                 *
+                 * Enquanto o token não estiver em cookie,
+                 * o CSRF permanece desabilitado.
+                 */
+                .csrf(csrf ->
+                        csrf.disable()
+                )
 
-            .cors(cors ->
-                cors.configurationSource(corsConfigurationSource())
-            )
+                .cors(cors ->
+                        cors.configurationSource(
+                                corsConfigurationSource()
+                        )
+                )
 
-            .sessionManagement(session ->
-                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-            )
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(
+                                SessionCreationPolicy.STATELESS
+                        )
+                )
 
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers(
-                    "/",
-                    "/index.html",
-                    "/favicon.ico",
-                    "/error",
-                    "/css/**",
-                    "/js/**",
-                    "/assets/**",
-                    "/.well-known/**",
-                    "/api/auth/login"
-                ).permitAll()
+                .authorizeHttpRequests(auth -> auth
 
-                .requestMatchers("/api/users/**")
-                .hasRole("ADMIN")
+                        /*
+                         * Recursos públicos.
+                         */
+                        .requestMatchers(
+                                "/",
+                                "/index.html",
+                                "/favicon.ico",
+                                "/error",
+                                "/css/**",
+                                "/js/**",
+                                "/assets/**",
+                                "/.well-known/**",
+                                "/api/auth/login"
+                        )
+                        .permitAll()
 
-                .anyRequest()
-                .authenticated()
-            )
-            .addFilterBefore(
-                jwtAuthenticationFilter,
-                UsernamePasswordAuthenticationFilter.class
-            );
+                        /*
+                         * Perfil do próprio usuário.
+                         *
+                         * Qualquer usuário autenticado pode
+                         * consultar e editar o próprio perfil.
+                         */
+                        .requestMatchers(
+                                "/api/me",
+                                "/api/me/**"
+                        )
+                        .authenticated()
+
+                        /*
+                         * Administração de usuários.
+                         *
+                         * Somente ADMIN.
+                         */
+                        .requestMatchers(
+                                "/api/users",
+                                "/api/users/**"
+                        )
+                        .hasRole("ADMIN")
+
+                        /*
+                         * Integração Sympla.
+                         *
+                         * ADMIN e COORDENADOR.
+                         */
+                        .requestMatchers(
+                                "/api/integrations/sympla",
+                                "/api/integrations/sympla/**"
+                        )
+                        .hasAnyRole(
+                                "ADMIN",
+                                "COORDENADOR"
+                        )
+
+                        /*
+                         * Área operacional do evento.
+                         *
+                         * Os quatro perfis atualmente
+                         * autorizados no sistema podem utilizar
+                         * esses endpoints.
+                         */
+                        .requestMatchers(
+                                "/api/events",
+                                "/api/events/**",
+                                "/api/sessions",
+                                "/api/sessions/**",
+                                "/api/participants",
+                                "/api/participants/**",
+                                "/api/groups",
+                                "/api/groups/**",
+                                "/api/reception",
+                                "/api/reception/**"
+                        )
+                        .hasAnyRole(
+                                "ADMIN",
+                                "COORDENADOR",
+                                "LIDER",
+                                "RECEPCAO"
+                        )
+
+                        /*
+                         * Segurança por padrão.
+                         *
+                         * Qualquer endpoint que não tenha sido
+                         * explicitamente liberado acima fica
+                         * bloqueado.
+                         */
+                        .anyRequest()
+                        .denyAll()
+                )
+
+                .addFilterBefore(
+                        jwtAuthenticationFilter,
+                        UsernamePasswordAuthenticationFilter.class
+                );
 
         return http.build();
     }
@@ -75,43 +162,60 @@ public class SecurityConfig {
 
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
 
+        CorsConfiguration configuration =
+                new CorsConfiguration();
+
+        /*
+         * Ambiente local.
+         *
+         * A origem de produção será configurada
+         * separadamente por variável de ambiente
+         * no bloco de configuração de produção.
+         */
         configuration.setAllowedOrigins(
-            List.of("http://localhost:5173")
+                List.of(
+                        "http://localhost:5173"
+                )
         );
 
         configuration.setAllowedMethods(
-            List.of(
-                "GET",
-                "POST",
-                "PUT",
-                "PATCH",
-                "DELETE",
-                "OPTIONS"
-            )
+                List.of(
+                        "GET",
+                        "POST",
+                        "PUT",
+                        "PATCH",
+                        "DELETE",
+                        "OPTIONS"
+                )
         );
 
         configuration.setAllowedHeaders(
-            List.of("Authorization", "Content-Type")
+                List.of(
+                        "Authorization",
+                        "Content-Type"
+                )
         );
 
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source =
-            new UrlBasedCorsConfigurationSource();
+                new UrlBasedCorsConfigurationSource();
 
-        source.registerCorsConfiguration("/**", configuration);
+        source.registerCorsConfiguration(
+                "/**",
+                configuration
+        );
 
         return source;
     }
-
 
     @Bean
     AuthenticationManager authenticationManager(
             AuthenticationConfiguration configuration
     ) throws Exception {
-        return configuration.getAuthenticationManager();
-    }
 
+        return configuration
+                .getAuthenticationManager();
+    }
 }

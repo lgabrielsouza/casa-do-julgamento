@@ -52,6 +52,10 @@ public class SymplaSyncService {
                     "(\\d{2}/\\d{2}/\\d{4}).*?(\\d{1,2}:\\d{2})"
             );
 
+    private static final Pattern TICKET_SESSION_PATTERN =
+        Pattern.compile(
+                "(\\d{2}/\\d{2}).*?(\\d{1,2}:\\d{2})"
+        );
     private final SymplaClient symplaClient;
     private final EventRepository eventRepository;
     private final EventSessionRepository eventSessionRepository;
@@ -293,7 +297,7 @@ public class SymplaSyncService {
     ) {
 
         Optional<SessaoEscolhida> escolhaOptional =
-                extrairSessaoEscolhida(dto);
+                extrairSessaoEscolhida(dto,event);
 
         if (escolhaOptional.isEmpty()) {
             return false;
@@ -360,43 +364,129 @@ public class SymplaSyncService {
         return alterado;
     }
 
-    private Optional<SessaoEscolhida> extrairSessaoEscolhida(
-            SymplaParticipantResponse dto
+   private Optional<SessaoEscolhida> extrairSessaoEscolhida(
+        SymplaParticipantResponse dto,
+        Event event
+) {
+
+    Optional<SessaoEscolhida> escolhaPeloIngresso =
+            extrairSessaoDoIngresso(
+                    dto,
+                    event
+            );
+
+    if (escolhaPeloIngresso.isPresent()) {
+        return escolhaPeloIngresso;
+    }
+
+    if (
+            dto.customForm() == null
+                    || dto.customForm().isEmpty()
+    ) {
+        return Optional.empty();
+    }
+
+    for (
+            SymplaCustomFormResponse campo
+            : dto.customForm()
     ) {
 
         if (
-                dto.customForm() == null
-                        || dto.customForm().isEmpty()
+                campo == null
+                        || !campoRepresentaSessao(campo.name())
+                        || campo.value() == null
+                        || campo.value().isBlank()
         ) {
-            return Optional.empty();
+            continue;
         }
 
-        for (
-                SymplaCustomFormResponse campo
-                : dto.customForm()
-        ) {
+        Optional<SessaoEscolhida> escolha =
+                converterValorDaSessao(
+                        campo.value()
+                );
 
-            if (
-                    campo == null
-                            || !campoRepresentaSessao(campo.name())
-                            || campo.value() == null
-                            || campo.value().isBlank()
-            ) {
-                continue;
-            }
-
-            Optional<SessaoEscolhida> escolha =
-                    converterValorDaSessao(
-                            campo.value()
-                    );
-
-            if (escolha.isPresent()) {
-                return escolha;
-            }
+        if (escolha.isPresent()) {
+            return escolha;
         }
+    }
 
+    return Optional.empty();
+}
+
+private Optional<SessaoEscolhida> extrairSessaoDoIngresso(
+        SymplaParticipantResponse dto,
+        Event event
+) {
+
+    if (
+            dto.ticketName() == null
+                    || dto.ticketName().isBlank()
+                    || event == null
+                    || event.getId() == null
+    ) {
         return Optional.empty();
     }
+
+    Matcher matcher =
+            TICKET_SESSION_PATTERN.matcher(
+                    dto.ticketName().trim()
+            );
+
+    if (!matcher.find()) {
+        return Optional.empty();
+    }
+
+    try {
+
+        String[] diaMes =
+                matcher.group(1).split("/");
+
+        int dia =
+                Integer.parseInt(
+                        diaMes[0]
+                );
+
+        int mes =
+                Integer.parseInt(
+                        diaMes[1]
+                );
+
+        LocalTime horario =
+                LocalTime.parse(
+                        matcher.group(2)
+                );
+
+        List<EventSession> sessoes =
+                eventSessionRepository
+                        .findAllByEventIdAndActiveTrueOrderByDateAscStartTimeAsc(
+                                event.getId()
+                        );
+
+        return sessoes.stream()
+                .filter(
+                        session ->
+                                session.getDate() != null
+                                        && session.getStartTime() != null
+                                        && session.getDate().getDayOfMonth() == dia
+                                        && session.getDate().getMonthValue() == mes
+                                        && session.getStartTime().equals(horario)
+                )
+                .map(
+                        session ->
+                                new SessaoEscolhida(
+                                        session.getDate(),
+                                        session.getStartTime()
+                                )
+                )
+                .findFirst();
+
+    } catch (
+            DateTimeParseException
+            | NumberFormatException exception
+    ) {
+        return Optional.empty();
+    }
+}
 
     private boolean campoRepresentaSessao(
             String nomeCampo

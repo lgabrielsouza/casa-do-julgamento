@@ -14,6 +14,9 @@ import {
   desativarSessao,
   listarSessoes,
 } from '../../services/sessionService'
+import {
+  listarSessoesParaGrupos,
+} from '../../services/receptionService'
 
 import './Sessoes.css'
 
@@ -186,6 +189,11 @@ function Sessoes() {
 
   const [sessoes, setSessoes] = useState([])
   const [
+  sessoesOperacionais,
+  setSessoesOperacionais,
+] = useState([])
+
+  const [
     dataSelecionada,
     setDataSelecionada,
   ] = useState('')
@@ -266,20 +274,46 @@ function Sessoes() {
     ],
   )
 
-  const sessoesDoDia = useMemo(
-    () =>
-      sessoes
-        .filter(
-          (sessao) =>
-            sessao.date === dataSelecionada,
-        )
-        .sort((sessaoA, sessaoB) =>
-          sessaoA.startTime.localeCompare(
-            sessaoB.startTime,
-          ),
+  const sessoesDoDia = useMemo(() => {
+    const operacionalPorSessao = new Map(
+      sessoesOperacionais.map((sessao) => [
+        String(sessao.sessionId),
+        sessao,
+      ]),
+    )
+
+    return sessoes
+      .filter(
+        (sessao) =>
+          sessao.date === dataSelecionada,
+      )
+      .map((sessao) => {
+        const operacional =
+          operacionalPorSessao.get(
+            String(sessao.id),
+          )
+
+        return {
+          ...sessao,
+          occupancy: operacional?.occupancy ?? 0,
+          available:
+            operacional?.available ??
+            Number(sessao.capacity) ??
+            0,
+          groupStatus:
+            operacional?.groupStatus ?? null,
+        }
+      })
+      .sort((sessaoA, sessaoB) =>
+        sessaoA.startTime.localeCompare(
+          sessaoB.startTime,
         ),
-    [sessoes, dataSelecionada],
-  )
+      )
+  }, [
+    sessoes,
+    sessoesOperacionais,
+    dataSelecionada,
+  ])
 
   const resumoDoDia = useMemo(() => {
     return sessoesDoDia.reduce(
@@ -431,19 +465,34 @@ function Sessoes() {
     setErro('')
 
     try {
-      const resposta = await listarSessoes({
-        eventId,
-        page: 0,
-        size: 500,
-        active: true,
-        sort: ['date,asc', 'startTime,asc'],
-      })
+      const [
+        respostaSessoes,
+        respostaOperacional,
+      ] = await Promise.all([
+        listarSessoes({
+          eventId,
+          page: 0,
+          size: 500,
+          active: true,
+          sort: ['date,asc', 'startTime,asc'],
+        }),
+        listarSessoesParaGrupos(eventId),
+      ])
 
       setSessoes(
-        ordenarSessoes(resposta.content || []),
+        ordenarSessoes(
+          respostaSessoes.content || [],
+        ),
+      )
+
+      setSessoesOperacionais(
+        Array.isArray(respostaOperacional)
+          ? respostaOperacional
+          : [],
       )
     } catch (error) {
       setSessoes([])
+      setSessoesOperacionais([])
 
       setErro(
         error.message ||
@@ -1015,14 +1064,29 @@ function Sessoes() {
 
                       <div className="sessoes-session-capacity">
                         <strong>
-                          {sessao.capacity}{' '}
-                          {sessao.capacity === 1
-                            ? 'vaga'
-                            : 'vagas'}
+                          {sessao.occupancy}/{sessao.capacity}
                         </strong>
 
                         <span>
-                          Capacidade da sessão
+                          Participantes
+                        </span>
+
+                        <span>
+                          {sessao.available}{' '}
+                          {sessao.available === 1
+                            ? 'vaga disponível'
+                            : 'vagas disponíveis'}
+                        </span>
+
+                        <span>
+                          Grupo:{' '}
+                          {sessao.groupStatus === 'FORMING'
+                            ? 'Em formação'
+                            : sessao.groupStatus === 'READY'
+                              ? 'Pronto'
+                              : sessao.groupStatus === 'RELEASED'
+                                ? 'Liberado'
+                                : 'Ainda não formado'}
                         </span>
                       </div>
 

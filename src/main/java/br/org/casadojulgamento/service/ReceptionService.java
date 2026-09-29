@@ -28,6 +28,7 @@ public class ReceptionService {
 
     private final ParticipantRepository participantRepository;
     private final EventSessionRepository eventSessionRepository;
+    private final ParticipantGroupService participantGroupService;
 
     @Transactional(readOnly = true)
     public Page<ParticipantResponse> listar(
@@ -129,24 +130,39 @@ public class ReceptionService {
     }
 
     @Transactional
-    public ParticipantResponse alterarSessao(
-            Long participantId,
-            ChangeReceptionSessionRequest request
-    ) {
+        public ParticipantResponse alterarSessao(
+                Long participantId,
+                ChangeReceptionSessionRequest request
+        ) {
         Participant participant =
                 buscarParticipanteOperacional(participantId);
 
-        validarVersao(participant, request.version());
-
-        EventSession session = buscarSessaoOpcional(
-                request.eventSessionId(),
-                participant
+        validarVersao(
+                participant,
+                request.version()
         );
 
-        participant.setEventSession(session);
+        if (request.eventSessionId() == null) {
+                throw new BusinessException(
+                        "A sessão de destino é obrigatória."
+                );
+        }
 
-        return salvar(participant);
-    }
+        participantGroupService.alocarParticipanteNaSessao(
+                participantId,
+                request.eventSessionId()
+        );
+
+        Participant participanteAtualizado =
+                participantRepository.findById(participantId)
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Participante não encontrado."
+                                )
+                        );
+
+        return toResponse(participanteAtualizado);
+        }
 
     private Participant buscarParticipanteOperacional(
             Long participantId

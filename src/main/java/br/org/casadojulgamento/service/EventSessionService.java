@@ -37,6 +37,7 @@ public class EventSessionService {
 
     private final EventSessionRepository sessionRepository;
     private final EventRepository eventRepository;
+    private final ParticipantGroupService participantGroupService;
 
     @Transactional
     public EventSessionResponse criar(
@@ -210,6 +211,10 @@ public class EventSessionService {
         try {
             EventSession sessionAtualizada =
                     sessionRepository.saveAndFlush(session);
+
+            participantGroupService.recalcularStatusDaSessao(
+                    sessionAtualizada.getId()
+            );
 
             return toResponse(sessionAtualizada);
 

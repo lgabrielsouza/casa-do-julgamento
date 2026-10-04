@@ -652,6 +652,15 @@ public class ParticipantGroupService {
      * =========================================================
      */
 
+    @Transactional
+    public void recalcularStatusDaSessao(
+            Long eventSessionId
+    ) {
+        groupRepository
+                .findByEventSessionIdAndActiveTrue(eventSessionId)
+                .ifPresent(this::atualizarStatusDoGrupo);
+    }
+
     private void atualizarStatusDoGrupo(
             ParticipantGroup group
     ) {

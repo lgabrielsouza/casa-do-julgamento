@@ -1,0 +1,183 @@
+.configuracoes-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-width: 950px;
+}
+
+.configuracoes-header h1 {
+  margin: 4px 0 8px;
+}
+
+.configuracoes-header p {
+  margin: 0;
+}
+
+.configuracoes-subtitle {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  opacity: 0.65;
+}
+
+.config-card {
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 12px;
+  padding: 24px;
+}
+
+.config-card-header {
+  margin-bottom: 22px;
+}
+
+.config-card-header h2 {
+  margin: 0 0 6px;
+}
+
+.config-card-header p {
+  margin: 0;
+  opacity: 0.7;
+}
+
+.profile-photo-area {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.profile-photo-preview {
+  width: 110px;
+  height: 110px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #171717;
+  color: #fff;
+  font-size: 38px;
+  font-weight: 700;
+}
+
+.profile-photo-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-photo-actions {
+  display: flex;
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.profile-photo-actions small,
+.config-field small {
+  opacity: 0.65;
+}
+
+.config-form {
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.config-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.config-field label {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.config-field input {
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid #d7d7d7;
+  border-radius: 7px;
+  font: inherit;
+}
+
+.config-field input:focus {
+  outline: none;
+  border-color: #222;
+}
+
+.config-field input:disabled {
+  background: #f4f4f4;
+  cursor: not-allowed;
+}
+
+.config-form-actions,
+.config-alert {
+  grid-column: 1 / -1;
+}
+
+.config-form-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.config-button {
+  border: 0;
+  border-radius: 7px;
+  background: #181818;
+  color: #fff;
+  padding: 11px 18px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.config-button.secondary {
+  background: #eeeeee;
+  color: #222;
+}
+
+.config-button:disabled,
+.config-button.disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.config-alert {
+  padding: 11px 14px;
+  border-radius: 7px;
+  font-size: 14px;
+}
+
+.config-alert.success {
+  background: #edf8ef;
+  color: #17642a;
+}
+
+.config-alert.error {
+  background: #fff0f0;
+  color: #a51d1d;
+}
+
+@media (max-width: 700px) {
+  .config-form {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-photo-area {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .config-form-actions {
+    justify-content: stretch;
+  }
+
+  .config-form-actions .config-button {
+    width: 100%;
+  }
+}

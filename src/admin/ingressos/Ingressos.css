@@ -1,0 +1,475 @@
+.ingressos-page {
+  width: 100%;
+}
+
+.ingressos-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 26px;
+}
+
+.ingressos-eyebrow {
+  margin-bottom: 5px;
+  color: #b00000;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.3px;
+  text-transform: uppercase;
+}
+
+.ingressos-heading h1 {
+  margin-bottom: 7px;
+  color: #181818;
+  font-size: 30px;
+}
+
+.ingressos-heading > div > p:last-child {
+  color: #777777;
+  font-size: 14px;
+}
+
+.novo-ingresso-button {
+  min-height: 42px;
+  padding: 0 17px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  background: #b00000;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.novo-ingresso-button:hover {
+  background: #8f0000;
+}
+
+/* RESUMO */
+
+.ingressos-summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.ingressos-summary > div {
+  display: flex;
+  flex-direction: column;
+  padding: 18px 20px;
+  border: 1px solid #e5e5e5;
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.ingressos-summary span {
+  margin-bottom: 7px;
+  color: #888888;
+  font-size: 11px;
+}
+
+.ingressos-summary strong {
+  color: #222222;
+  font-size: 24px;
+}
+
+/* CARD */
+
+.ingressos-card {
+  overflow: hidden;
+  border: 1px solid #e5e5e5;
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.ingressos-filters {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 14px;
+  padding: 20px 22px;
+  border-bottom: 1px solid #eeeeee;
+  background: #fafafa;
+}
+
+.ingressos-search,
+.ingressos-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ingressos-search label,
+.ingressos-filter label {
+  color: #555555;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.ingressos-search input,
+.ingressos-filter select {
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid #dcdcdc;
+  border-radius: 8px;
+  outline: none;
+  background: #ffffff;
+  color: #333333;
+  font-size: 12px;
+}
+
+.ingressos-search input:focus,
+.ingressos-filter select:focus {
+  border-color: #b00000;
+}
+
+.ingressos-card-header {
+  padding: 18px 22px;
+  border-bottom: 1px solid #eeeeee;
+}
+
+.ingressos-card-header h2 {
+  margin-bottom: 4px;
+  color: #202020;
+  font-size: 16px;
+}
+
+.ingressos-card-header span {
+  color: #929292;
+  font-size: 11px;
+}
+
+/* TABELA */
+
+.ingressos-table-wrapper {
+  overflow-x: auto;
+}
+
+.ingressos-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.ingressos-table th,
+.ingressos-table td {
+  padding: 15px 18px;
+  text-align: left;
+  border-bottom: 1px solid #eeeeee;
+  vertical-align: middle;
+}
+
+.ingressos-table th {
+  background: #fafafa;
+  color: #777777;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+}
+
+.ingressos-table td {
+  color: #555555;
+  font-size: 12px;
+}
+
+.ingressos-table td > strong {
+  display: block;
+  margin-bottom: 3px;
+  color: #252525;
+}
+
+.ingressos-table td > span:not(.ingresso-origem):not(.ingresso-status):not(.ingresso-checkin) {
+  color: #929292;
+  font-size: 10px;
+}
+
+.ingressos-table code {
+  padding: 5px 7px;
+  border-radius: 5px;
+  background: #f3f3f3;
+  color: #333333;
+  font-family: monospace;
+  font-size: 10px;
+}
+
+.ingresso-origem,
+.ingresso-status,
+.ingresso-checkin {
+  display: inline-flex;
+  padding: 5px 8px;
+  border-radius: 20px;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.ingresso-origem.pagtickets {
+  background: #eef3ff;
+  color: #345da7;
+}
+
+.ingresso-origem.cortesia {
+  background: #fff5e6;
+  color: #a76700;
+}
+
+.ingresso-origem.manual {
+  background: #f2f2f2;
+  color: #666666;
+}
+
+.ingresso-status.ativo {
+  background: #eef7f0;
+  color: #27813a;
+}
+
+.ingresso-status.cancelado {
+  background: #fff0f0;
+  color: #b00000;
+}
+
+.ingresso-checkin.utilizado {
+  background: #eef7f0;
+  color: #27813a;
+}
+
+.ingresso-checkin.pendente {
+  background: #f3f3f3;
+  color: #777777;
+}
+
+.ingresso-action {
+  padding: 7px 10px;
+  border: 1px solid #dddddd;
+  border-radius: 7px;
+  cursor: pointer;
+  background: #ffffff;
+  color: #555555;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.ingresso-action:hover {
+  border-color: #b00000;
+  color: #b00000;
+}
+
+.ingressos-empty {
+  padding: 45px !important;
+  text-align: center !important;
+  color: #8c8c8c !important;
+}
+
+/* MODAL */
+
+.ingresso-modal-overlay {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.62);
+}
+
+.ingresso-modal {
+  width: 100%;
+  max-width: 650px;
+  max-height: 90vh;
+  overflow-y: auto;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.35);
+}
+
+.ingresso-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 22px 24px;
+  border-bottom: 1px solid #eeeeee;
+}
+
+.ingresso-modal-header span {
+  display: block;
+  margin-bottom: 4px;
+  color: #b00000;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.ingresso-modal-header h2 {
+  color: #202020;
+  font-size: 21px;
+}
+
+.ingresso-modal-close {
+  border: none;
+  cursor: pointer;
+  background: transparent;
+  color: #777777;
+  font-size: 27px;
+}
+
+.ingresso-details {
+  padding: 24px;
+}
+
+.ingresso-details-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.ingresso-details-grid > div,
+.ingresso-contact > div {
+  display: flex;
+  flex-direction: column;
+  padding: 14px;
+  border: 1px solid #eeeeee;
+  border-radius: 8px;
+  background: #fafafa;
+}
+
+.ingresso-details-grid span,
+.ingresso-contact span {
+  margin-bottom: 5px;
+  color: #888888;
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.ingresso-details-grid strong,
+.ingresso-contact strong {
+  color: #333333;
+  font-size: 12px;
+}
+
+.ingresso-contact {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.ingresso-qr-placeholder {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 22px;
+  padding: 18px;
+  border: 1px dashed #cccccc;
+  border-radius: 10px;
+}
+
+.ingresso-qr-placeholder > div:first-child {
+  width: 70px;
+  height: 70px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: #161616;
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.ingresso-qr-placeholder > div:last-child {
+  display: flex;
+  flex-direction: column;
+}
+
+.ingresso-qr-placeholder strong {
+  margin-bottom: 6px;
+  color: #333333;
+  font-size: 12px;
+}
+
+.ingresso-qr-placeholder span {
+  color: #888888;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.ingresso-modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 9px;
+}
+
+.ingresso-secondary-button,
+.ingresso-danger-button {
+  min-height: 39px;
+  padding: 0 14px;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.ingresso-secondary-button {
+  border: 1px solid #dddddd;
+  background: #ffffff;
+  color: #555555;
+}
+
+.ingresso-secondary-button:hover {
+  border-color: #b00000;
+  color: #b00000;
+}
+
+.ingresso-danger-button {
+  border: 1px solid #b00000;
+  background: #b00000;
+  color: #ffffff;
+}
+
+.ingresso-danger-button:hover {
+  background: #8f0000;
+}
+
+@media (max-width: 950px) {
+  .ingressos-summary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .ingressos-filters {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .ingressos-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .ingresso-details-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .ingresso-contact {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .ingressos-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .ingresso-details-grid {
+    grid-template-columns: 1fr;
+  }
+}

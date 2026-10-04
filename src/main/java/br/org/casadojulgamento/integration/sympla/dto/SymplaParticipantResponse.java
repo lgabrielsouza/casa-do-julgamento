@@ -3,6 +3,8 @@ package br.org.casadojulgamento.integration.sympla.dto;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.List;
+
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record SymplaParticipantResponse(
 
@@ -37,11 +39,25 @@ public record SymplaParticipantResponse(
 
         String email,
 
-        CheckinResponse checkin
+        CheckinResponse checkin,
+
+        @JsonProperty("custom_form")
+        List<SymplaCustomFormResponse> customForm
 
 ) {
 
     public String fullName() {
-        return (firstName + " " + lastName).trim();
+
+        String first =
+                firstName != null
+                        ? firstName
+                        : "";
+
+        String last =
+                lastName != null
+                        ? lastName
+                        : "";
+
+        return (first + " " + last).trim();
     }
 }

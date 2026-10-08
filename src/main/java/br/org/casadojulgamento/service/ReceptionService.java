@@ -37,9 +37,7 @@ public class ReceptionService {
     ) {
         return participantRepository
                 .findAll(
-                        ReceptionParticipantSpecification.withFilters(
-                                filter
-                        ),
+                        ReceptionParticipantSpecification.withFilters(filter),
                         pageable
                 )
                 .map(this::toResponse);
@@ -55,10 +53,8 @@ public class ReceptionService {
 
         validarVersao(participant, request.version());
 
-        if (
-                participant.getArrivalStatus()
-                        != ParticipantArrivalStatus.NOT_ARRIVED
-        ) {
+        if (participant.getArrivalStatus()
+                != ParticipantArrivalStatus.NOT_ARRIVED) {
             throw new BusinessException(
                     "A chegada deste participante já foi registrada."
             );
@@ -67,10 +63,7 @@ public class ReceptionService {
         participant.setArrivalStatus(
                 ParticipantArrivalStatus.ARRIVED
         );
-
-        participant.setArrivedAt(
-                LocalDateTime.now()
-        );
+        participant.setArrivedAt(LocalDateTime.now());
 
         return salvar(participant);
     }
@@ -85,12 +78,16 @@ public class ReceptionService {
 
         validarVersao(participant, request.version());
 
-        if (
-                participant.getArrivalStatus()
-                        != ParticipantArrivalStatus.ARRIVED
-        ) {
+        if (participant.getArrivalStatus()
+                != ParticipantArrivalStatus.ARRIVED) {
             throw new BusinessException(
                     "O participante precisa ter a chegada registrada antes de ficar pronto para grupo."
+            );
+        }
+
+        if (participant.getEventSession() == null) {
+            throw new BusinessException(
+                    "Defina uma sessão antes de marcar o participante como pronto para grupo."
             );
         }
 
@@ -98,7 +95,14 @@ public class ReceptionService {
                 ParticipantArrivalStatus.READY_FOR_GROUP
         );
 
-        return salvar(participant);
+        ParticipantResponse response = salvar(participant);
+
+        participantGroupService.alocarParticipanteNaSessao(
+                participantId,
+                participant.getEventSession().getId()
+        );
+
+        return response;
     }
 
     @Transactional
@@ -111,41 +115,41 @@ public class ReceptionService {
 
         validarVersao(participant, request.version());
 
-        if (
-                participant.getArrivalStatus()
-                        == ParticipantArrivalStatus.NOT_ARRIVED
-        ) {
+        if (participant.getArrivalStatus()
+                == ParticipantArrivalStatus.NOT_ARRIVED) {
             throw new BusinessException(
                     "Este participante ainda não possui chegada registrada."
+            );
+        }
+
+        if (participantGroupService.possuiVinculoAtivo(participantId)) {
+            throw new BusinessException(
+                    "O participante já integra um grupo. Não é possível desfazer a chegada."
             );
         }
 
         participant.setArrivalStatus(
                 ParticipantArrivalStatus.NOT_ARRIVED
         );
-
         participant.setArrivedAt(null);
 
         return salvar(participant);
     }
 
     @Transactional
-        public ParticipantResponse alterarSessao(
-                Long participantId,
-                ChangeReceptionSessionRequest request
-        ) {
+    public ParticipantResponse alterarSessao(
+            Long participantId,
+            ChangeReceptionSessionRequest request
+    ) {
         Participant participant =
                 buscarParticipanteOperacional(participantId);
 
-        validarVersao(
-                participant,
-                request.version()
-        );
+        validarVersao(participant, request.version());
 
         if (request.eventSessionId() == null) {
-                throw new BusinessException(
-                        "A sessão de destino é obrigatória."
-                );
+            throw new BusinessException(
+                    "A sessão de destino é obrigatória."
+            );
         }
 
         participantGroupService.alocarParticipanteNaSessao(
@@ -153,27 +157,27 @@ public class ReceptionService {
                 request.eventSessionId()
         );
 
-        Participant participanteAtualizado =
-                participantRepository.findById(participantId)
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Participante não encontrado."
-                                )
-                        );
+        Participant atualizado = participantRepository
+                .findById(participantId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Participante não encontrado."
+                        )
+                );
 
-        return toResponse(participanteAtualizado);
-        }
+        return toResponse(atualizado);
+    }
 
     private Participant buscarParticipanteOperacional(
             Long participantId
     ) {
-        Participant participant =
-                participantRepository.findById(participantId)
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Participante não encontrado."
-                                )
-                        );
+        Participant participant = participantRepository
+                .findById(participantId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Participante não encontrado."
+                        )
+                );
 
         if (!Boolean.TRUE.equals(participant.getActive())) {
             throw new ResourceNotFoundException(
@@ -181,10 +185,7 @@ public class ReceptionService {
             );
         }
 
-        if (
-                participant.getStatus()
-                        == ParticipantStatus.CANCELLED
-        ) {
+        if (participant.getStatus() == ParticipantStatus.CANCELLED) {
             throw new BusinessException(
                     "Participante cancelado não pode ser atendido pela Recepção."
             );
@@ -201,13 +202,13 @@ public class ReceptionService {
             return null;
         }
 
-        EventSession session =
-                eventSessionRepository.findById(eventSessionId)
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Sessão não encontrada."
-                                )
-                        );
+        EventSession session = eventSessionRepository
+                .findById(eventSessionId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Sessão não encontrada."
+                        )
+                );
 
         if (!Boolean.TRUE.equals(session.getActive())) {
             throw new ResourceNotFoundException(
@@ -215,24 +216,18 @@ public class ReceptionService {
             );
         }
 
-        if (
-                !session.getEvent()
-                        .getId()
-                        .equals(
-                                participant.getEvent().getId()
-                        )
-        ) {
+        if (!session.getEvent().getId()
+                .equals(participant.getEvent().getId())) {
             throw new BusinessException(
                     "A sessão informada não pertence ao evento do participante."
             );
         }
 
-        long ocupacao =
-                participantRepository
-                        .countByEventSessionIdAndActiveTrueAndIdNot(
-                                session.getId(),
-                                participant.getId()
-                        );
+        long ocupacao = participantRepository
+                .countByEventSessionIdAndActiveTrueAndIdNot(
+                        session.getId(),
+                        participant.getId()
+                );
 
         if (ocupacao >= session.getCapacity()) {
             throw new BusinessException(
@@ -258,16 +253,11 @@ public class ReceptionService {
             Participant participant
     ) {
         try {
-            Participant participantSalvo =
-                    participantRepository.saveAndFlush(
-                            participant
-                    );
+            Participant salvo =
+                    participantRepository.saveAndFlush(participant);
 
-            return toResponse(participantSalvo);
-
-        } catch (
-                ObjectOptimisticLockingFailureException exception
-        ) {
+            return toResponse(salvo);
+        } catch (ObjectOptimisticLockingFailureException exception) {
             throw new BusinessException(
                     "O participante foi alterado por outro usuário. Atualize a tela e tente novamente."
             );
@@ -277,8 +267,7 @@ public class ReceptionService {
     private ParticipantResponse toResponse(
             Participant participant
     ) {
-        EventSession session =
-                participant.getEventSession();
+        EventSession session = participant.getEventSession();
 
         return new ParticipantResponse(
                 participant.getId(),

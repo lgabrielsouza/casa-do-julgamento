@@ -1,51 +1,40 @@
-import {
-  useEffect,
-  useState,
-} from 'react'
 
+import { useEffect, useState } from 'react'
 import {
   NavLink,
   Outlet,
+  useLocation,
   useNavigate,
 } from 'react-router-dom'
 
 import logoCasaJulgamento from '../../main/resources/static/assets/images/logo-cj.png'
 import { buscarFotoPerfil } from '../../services/profileService'
-
 import './AdminLayout.css'
+
+function lerUsuarioSalvo() {
+  try {
+    const salvo = localStorage.getItem('cj_usuario')
+
+    return salvo
+      ? JSON.parse(salvo)
+      : { nome: 'Usuário', role: 'SEM PERFIL' }
+  } catch {
+    localStorage.removeItem('cj_usuario')
+    return { nome: 'Usuário', role: 'SEM PERFIL' }
+  }
+}
 
 function AdminLayout() {
   const navigate = useNavigate()
+  const location = useLocation()
 
+  const [usuario, setUsuario] = useState(lerUsuarioSalvo)
   const [fotoUrl, setFotoUrl] = useState(null)
+  const [menuAberto, setMenuAberto] = useState(false)
 
-  const [usuario, setUsuario] = useState(() => {
-    const usuarioSalvo =
-      localStorage.getItem('cj_usuario')
-
-    try {
-      return usuarioSalvo
-        ? JSON.parse(usuarioSalvo)
-        : {
-            nome: 'Usuário',
-            role: 'SEM PERFIL',
-          }
-    } catch {
-      localStorage.removeItem('cj_usuario')
-
-      return {
-        nome: 'Usuário',
-        role: 'SEM PERFIL',
-      }
-    }
-  })
-
-  const role = usuario.role
-
+  const role = usuario?.role
   const isAdmin = role === 'ADMIN'
-
-  const isCoordenador =
-    role === 'COORDENADOR'
+  const isCoordenador = role === 'COORDENADOR'
 
   const podeAcessarEvento = [
     'ADMIN',
@@ -54,135 +43,138 @@ function AdminLayout() {
     'RECEPCAO',
   ].includes(role)
 
-  const podeAcessarSympla =
-    isAdmin || isCoordenador
-
-  const podeAcessarMinisterio =
-    isAdmin || isCoordenador
-
-  const podeAcessarRelatorios =
-    isAdmin || isCoordenador
-
-  const podeAcessarConfiguracoes = true
+  const podeAcessarSympla = isAdmin || isCoordenador
 
   const inicial =
-    usuario.nome
-      ?.trim()
-      ?.charAt(0)
-      ?.toUpperCase() || 'U'
+    usuario?.nome?.trim()?.charAt(0)?.toUpperCase() || 'U'
 
   useEffect(() => {
-    let urlCriada = null
+    let ativo = true
+    let urlAtual = null
 
-    async function carregarFotoUsuario() {
+    async function atualizarFoto() {
       try {
-        const blob =
-          await buscarFotoPerfil()
+        const blob = await buscarFotoPerfil()
 
-        if (!blob) {
+        if (!ativo) return
+
+        if (blob) {
+          const novaUrl = URL.createObjectURL(blob)
+          urlAtual = novaUrl
+          setFotoUrl(novaUrl)
+        } else {
           setFotoUrl(null)
-          return
         }
-
-        urlCriada =
-          URL.createObjectURL(blob)
-
-        setFotoUrl(urlCriada)
       } catch {
-        setFotoUrl(null)
+        if (ativo) setFotoUrl(null)
       }
     }
 
-    carregarFotoUsuario()
+    atualizarFoto()
+
+    function atualizarPerfil() {
+      setUsuario(lerUsuarioSalvo())
+
+      buscarFotoPerfil()
+        .then((blob) => {
+          if (!ativo) return
+
+          const novaUrl = blob
+            ? URL.createObjectURL(blob)
+            : null
+
+          const anterior = urlAtual
+          urlAtual = novaUrl
+          setFotoUrl(novaUrl)
+
+          if (anterior) {
+            URL.revokeObjectURL(anterior)
+          }
+        })
+        .catch(() => {
+          // Mantém a foto anterior.
+        })
+    }
+
+    window.addEventListener(
+      'cj-profile-updated',
+      atualizarPerfil,
+    )
 
     return () => {
-      if (urlCriada) {
-        URL.revokeObjectURL(
-          urlCriada,
-        )
+      ativo = false
+
+      window.removeEventListener(
+        'cj-profile-updated',
+        atualizarPerfil,
+      )
+
+      if (urlAtual) {
+        URL.revokeObjectURL(urlAtual)
       }
     }
   }, [])
 
   useEffect(() => {
-  function atualizarPerfilNoHeader() {
-    const usuarioSalvo =
-      localStorage.getItem('cj_usuario')
+    setMenuAberto(false)
+  }, [location.pathname])
 
-    try {
-      if (usuarioSalvo) {
-        setUsuario(
-          JSON.parse(usuarioSalvo),
-        )
+  useEffect(() => {
+    if (!menuAberto) return
+
+    function aoPressionarTecla(event) {
+      if (event.key === 'Escape') {
+        setMenuAberto(false)
       }
-    } catch {
-      // Mantém o usuário atual.
     }
 
-    carregarFotoUsuarioAtualizada()
-  }
-
-  async function carregarFotoUsuarioAtualizada() {
-    try {
-      const blob =
-        await buscarFotoPerfil()
-
-      if (!blob) {
-        setFotoUrl((urlAnterior) => {
-          if (urlAnterior) {
-            URL.revokeObjectURL(
-              urlAnterior,
-            )
-          }
-
-          return null
-        })
-
-        return
+    function aoRedimensionar() {
+      if (window.innerWidth > 700) {
+        setMenuAberto(false)
       }
-
-      const novaUrl =
-        URL.createObjectURL(blob)
-
-      setFotoUrl((urlAnterior) => {
-        if (urlAnterior) {
-          URL.revokeObjectURL(
-            urlAnterior,
-          )
-        }
-
-        return novaUrl
-      })
-    } catch {
-      // Mantém a foto atual.
     }
-  }
 
-  window.addEventListener(
-    'cj-profile-updated',
-    atualizarPerfilNoHeader,
-  )
+    window.addEventListener('keydown', aoPressionarTecla)
+    window.addEventListener('resize', aoRedimensionar)
 
-  return () => {
-    window.removeEventListener(
-      'cj-profile-updated',
-      atualizarPerfilNoHeader,
-    )
+    return () => {
+      window.removeEventListener('keydown', aoPressionarTecla)
+      window.removeEventListener('resize', aoRedimensionar)
+    }
+  }, [menuAberto])
+
+  function fecharMenu() {
+    setMenuAberto(false)
   }
-}, [])
 
   function handleLogout() {
+    fecharMenu()
+
     localStorage.removeItem('cj_token')
     localStorage.removeItem('cj_usuario')
 
-    navigate('/admin/login', {
-      replace: true,
-    })
+    navigate('/admin/login', { replace: true })
   }
 
   return (
     <div className="admin-layout">
-      <aside className="admin-sidebar">
+      {menuAberto && (
+        <button
+          type="button"
+          className="admin-sidebar-overlay"
+          onClick={fecharMenu}
+          aria-label="Fechar menu de navegação"
+          tabIndex={-1}
+        />
+      )}
+
+      <aside
+        id="admin-navigation"
+        className={`admin-sidebar ${
+          menuAberto ? 'admin-sidebar-open' : ''
+        }`}
+        aria-label="Navegação administrativa"
+      >
         <div className="sidebar-brand">
           <img
             src={logoCasaJulgamento}
@@ -194,100 +186,90 @@ function AdminLayout() {
             <span>Casa do</span>
             <strong>Julgamento</strong>
           </div>
+
+          <button
+            type="button"
+            className="sidebar-close-button"
+            onClick={fecharMenu}
+            aria-label="Fechar menu"
+          >
+            ×
+          </button>
         </div>
 
         <nav className="sidebar-nav">
-          <NavLink to="/admin/dashboard">
-            Dashboard
-          </NavLink>
-
           {podeAcessarEvento && (
             <>
               <p className="sidebar-section-title">
                 EVENTO
               </p>
 
-              <NavLink to="/admin/eventos">
+              <NavLink
+                to="/admin/eventos"
+                onClick={fecharMenu}
+              >
                 Eventos
               </NavLink>
 
-              <NavLink to="/admin/sessoes">
+              <NavLink
+                to="/admin/sessoes"
+                onClick={fecharMenu}
+              >
                 Sessões
               </NavLink>
 
-              <NavLink to="/admin/participantes">
+              <NavLink
+                to="/admin/participantes"
+                onClick={fecharMenu}
+              >
                 Participantes
               </NavLink>
 
               <NavLink
                 to="/admin/recepcao"
-                className={({ isActive }) =>
-                  isActive
-                    ? 'admin-nav-link active'
-                    : 'admin-nav-link'
-                }
+                end
+                onClick={fecharMenu}
               >
-                <span>Recepção</span>
+                Recepção
               </NavLink>
 
-              {(isAdmin ||
-                isCoordenador) && (
-                <NavLink to="/admin/ingressos">
-                  Ingressos
-                </NavLink>
-              )}
+              <NavLink
+                to="/admin/recepcao/grupos"
+                onClick={fecharMenu}
+              >
+                Formação de Grupos
+              </NavLink>
 
               {podeAcessarSympla && (
-                <NavLink to="/admin/sympla">
+                <NavLink
+                  to="/admin/sympla"
+                  onClick={fecharMenu}
+                >
                   Sympla
                 </NavLink>
               )}
             </>
           )}
 
-          {podeAcessarMinisterio && (
-            <>
-              <p className="sidebar-section-title">
-                MINISTÉRIO
-              </p>
+          <p className="sidebar-section-title">
+            ADMINISTRAÇÃO
+          </p>
 
-              <NavLink to="/admin/decisoes">
-                Decisões
-              </NavLink>
-
-              <NavLink to="/admin/igrejas">
-                Igrejas Parceiras
-              </NavLink>
-            </>
+          {isAdmin && (
+            <NavLink
+              to="/admin/usuarios"
+              onClick={fecharMenu}
+            >
+              Usuários
+            </NavLink>
           )}
 
-          {(isAdmin ||
-            podeAcessarRelatorios ||
-            podeAcessarConfiguracoes) && (
-            <>
-              <p className="sidebar-section-title">
-                ADMINISTRAÇÃO
-              </p>
-
-              {isAdmin && (
-                <NavLink to="/admin/usuarios">
-                  Usuários
-                </NavLink>
-              )}
-
-              {podeAcessarRelatorios && (
-                <NavLink to="/admin/relatorios">
-                  Relatórios
-                </NavLink>
-              )}
-
-              {podeAcessarConfiguracoes && (
-                <NavLink to="/admin/configuracoes">
-                  Configurações
-                </NavLink>
-              )}
-            </>
-          )}
+          <NavLink
+            to="/admin/configuracoes"
+            onClick={fecharMenu}
+          >
+            Configurações
+          </NavLink>
         </nav>
 
         <button
@@ -301,14 +283,26 @@ function AdminLayout() {
 
       <div className="admin-main">
         <header className="admin-header">
-          <div>
-            <p className="admin-header-small">
-              Casa do Julgamento
-            </p>
+          <div className="admin-header-start">
+            <button
+              type="button"
+              className="admin-menu-toggle"
+              onClick={() => setMenuAberto((atual) => !atual)}
+              aria-label="Abrir menu de navegação"
+              aria-expanded={menuAberto}
+              aria-controls="admin-navigation"
+            >
+              <span />
+              <span />
+              <span />
+            </button>
 
-            <strong>
-              Painel Administrativo
-            </strong>
+            <div className="admin-header-title">
+              <p className="admin-header-small">
+                Casa do Julgamento
+              </p>
+              <strong>Painel Administrativo</strong>
+            </div>
           </div>
 
           <div className="admin-user">
@@ -324,14 +318,9 @@ function AdminLayout() {
               )}
             </div>
 
-            <div>
-              <strong>
-                {usuario.nome}
-              </strong>
-
-              <span>
-                {usuario.role}
-              </span>
+            <div className="admin-user-details">
+              <strong>{usuario?.nome || 'Usuário'}</strong>
+              <span>{role || 'SEM PERFIL'}</span>
             </div>
           </div>
         </header>

@@ -1,3 +1,4 @@
+
 import {
   Navigate,
   Route,
@@ -6,17 +7,12 @@ import {
 
 import Login from './admin/login/Login.jsx'
 import AdminLayout from './admin/layouts/AdminLayout.jsx'
-import Dashboard from './admin/dashboard/Dashboard.jsx'
 import Eventos from './admin/eventos/Eventos.jsx'
 import Sessoes from './admin/sessoes/Sessoes.jsx'
 import Participantes from './admin/participantes/Participantes.jsx'
 import Recepcao from './admin/recepcao/Recepcao.jsx'
 import RecepcaoPrint from './admin/recepcao/RecepcaoPrint.jsx'
-import Ingressos from './admin/ingressos/Ingressos.jsx'
-import Decisoes from './admin/decisoes/Decisoes.jsx'
-import Igrejas from './admin/igrejas/Igrejas.jsx'
 import Usuarios from './admin/usuarios/Usuarios.jsx'
-import Relatorios from './admin/relatorios/Relatorios.jsx'
 import Configuracoes from './admin/configuracoes/Configuracoes.jsx'
 import Sympla from './admin/sympla/Sympla.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
@@ -73,7 +69,7 @@ function App() {
           index
           element={
             <Navigate
-              to="dashboard"
+              to="eventos"
               replace
             />
           }
@@ -81,7 +77,12 @@ function App() {
 
         <Route
           path="dashboard"
-          element={<Dashboard />}
+          element={
+            <Navigate
+              to="/admin/eventos"
+              replace
+            />
+          }
         />
 
         <Route
@@ -130,37 +131,10 @@ function App() {
         />
 
         <Route
-          path="ingressos"
-          element={
-            <ProtectedRoute roles={PERFIS_GERAIS}>
-              <Ingressos />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
           path="sympla"
           element={
             <ProtectedRoute roles={PERFIS_GERAIS}>
               <Sympla />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="decisoes"
-          element={
-            <ProtectedRoute roles={PERFIS_GERAIS}>
-              <Decisoes />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="igrejas"
-          element={
-            <ProtectedRoute roles={PERFIS_GERAIS}>
-              <Igrejas />
             </ProtectedRoute>
           }
         />
@@ -175,15 +149,6 @@ function App() {
         />
 
         <Route
-          path="relatorios"
-          element={
-            <ProtectedRoute roles={PERFIS_GERAIS}>
-              <Relatorios />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
           path="configuracoes"
           element={
             <ProtectedRoute>
@@ -191,7 +156,7 @@ function App() {
             </ProtectedRoute>
           }
         />
-        </Route>
+      </Route>
 
       <Route
         path="*"

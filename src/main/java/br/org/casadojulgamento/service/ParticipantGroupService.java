@@ -1,3 +1,4 @@
+
 package br.org.casadojulgamento.service;
 
 import br.org.casadojulgamento.api.dto.group.ParticipantGroupMemberResponse;
@@ -49,6 +50,7 @@ public class ParticipantGroupService {
     @Transactional(readOnly = true)
     public long buscarOcupacao(Long eventSessionId) {
         buscarSessao(eventSessionId);
+
         return participantRepository.countByEventSessionIdAndActiveTrue(
                 eventSessionId
         );
@@ -148,6 +150,7 @@ public class ParticipantGroupService {
 
             currentMembership.setActive(false);
             currentMembership.setRemovedAt(LocalDateTime.now());
+
             memberRepository.saveAndFlush(currentMembership);
         }
 
@@ -264,6 +267,66 @@ public class ParticipantGroupService {
         groupRepository.saveAndFlush(group);
     }
 
+    /**
+     * Retira um participante de um grupo ainda não liberado.
+     * Preserva o histórico do vínculo.
+     *
+     * Não modifica a inscrição, a sessão atual ou a
+     * sessão original do participante.
+     */
+    @Transactional
+    public void retirarParticipanteDeGrupoEmFormacao(Long participantId) {
+
+        ParticipantGroupMember inicial = memberRepository
+                .findByParticipantIdAndActiveTrue(participantId)
+                .orElse(null);
+
+        if (inicial == null) {
+            return;
+        }
+
+        Long sessionId = inicial.getGroup()
+                .getEventSession()
+                .getId();
+
+        // Bloqueia a sessão durante a alteração operacional.
+        eventSessionRepository.findByIdForUpdate(sessionId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Sessão não encontrada."
+                        )
+                );
+
+        // Reconsulta o vínculo após obter o bloqueio.
+        ParticipantGroupMember vinculo = memberRepository
+                .findByParticipantIdAndActiveTrue(participantId)
+                .orElse(null);
+
+        if (vinculo == null) {
+            return;
+        }
+
+        ParticipantGroup grupo = vinculo.getGroup();
+
+        if (!grupo.getEventSession().getId().equals(sessionId)) {
+            throw new BusinessException(
+                    "O grupo foi alterado. Atualize a tela e tente novamente."
+            );
+        }
+
+        // RELEASED e CANCELLED continuam protegidos.
+        validarGrupoDisponivelParaSaida(grupo);
+
+        // Exclusão lógica: mantém o histórico no banco.
+        vinculo.setActive(false);
+        vinculo.setRemovedAt(LocalDateTime.now());
+
+        memberRepository.saveAndFlush(vinculo);
+
+        // Atualiza FORMING / READY conforme a ocupação.
+        atualizarStatusDoGrupo(grupo);
+    }
+
     @Transactional(readOnly = true)
     public boolean possuiVinculoAtivo(Long participantId) {
         return memberRepository.existsByParticipantIdAndActiveTrue(
@@ -284,6 +347,7 @@ public class ParticipantGroupService {
                     .getEventSession()
                     .getId()
                     .equals(session.getId())) {
+
                 throw new BusinessException(
                         "Participante possui vínculo ativo em outro grupo."
                 );
@@ -467,6 +531,7 @@ public class ParticipantGroupService {
                 || destinationSession.getEvent() == null
                 || !participant.getEvent().getId()
                 .equals(destinationSession.getEvent().getId())) {
+
             throw new BusinessException(
                     "A sessão de destino pertence a outro evento."
             );

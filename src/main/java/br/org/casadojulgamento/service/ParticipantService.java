@@ -1,3 +1,4 @@
+
 package br.org.casadojulgamento.service;
 
 import br.org.casadojulgamento.api.dto.participant.CreateParticipantRequest;
@@ -29,6 +30,7 @@ public class ParticipantService {
     private final ParticipantRepository participantRepository;
     private final EventRepository eventRepository;
     private final EventSessionRepository eventSessionRepository;
+    private final ParticipantGroupService participantGroupService;
 
     @Transactional
     public ParticipantResponse criar(
@@ -164,11 +166,40 @@ public class ParticipantService {
         }
     }
 
+    /**
+     * Desativação lógica do participante.
+     *
+     * Se o participante estiver vinculado a um grupo
+     * em formação, encerra também esse vínculo.
+     *
+     * O histórico da inscrição e da participação
+     * é preservado no banco de dados.
+     *
+     * Grupos RELEASED ou CANCELLED não permitem
+     * a retirada operacional do participante.
+     *
+     * Toda a operação ocorre na mesma transação.
+     */
     @Transactional
     public void desativar(Long id) {
+
         Participant participant =
                 buscarParticipanteAtivo(id);
 
+        // Retira o participante do grupo, caso exista
+        // vínculo ativo e o grupo permita a saída.
+        //
+        // Este método preserva o histórico do vínculo,
+        // preenchendo removedAt e active = false.
+        //
+        // Caso o grupo esteja RELEASED ou CANCELLED,
+        // a operação lança BusinessException e a
+        // desativação não é realizada.
+        participantGroupService
+                .retirarParticipanteDeGrupoEmFormacao(id);
+
+        // Executa a desativação lógica somente depois
+        // de validar e encerrar o vínculo operacional.
         participant.setActive(false);
 
         try {
@@ -227,11 +258,9 @@ public class ParticipantService {
             );
         }
 
-        if (
-                !session.getEvent()
-                        .getId()
-                        .equals(event.getId())
-        ) {
+        if (!session.getEvent()
+                .getId()
+                .equals(event.getId())) {
             throw new BusinessException(
                     "A sessão informada não pertence ao evento selecionado."
             );
@@ -303,30 +332,29 @@ public class ParticipantService {
         return apenasDigitos;
     }
 
-private ParticipantResponse toResponse(
-        Participant participant
-) {
-    EventSession session =
-            participant.getEventSession();
+    private ParticipantResponse toResponse(
+            Participant participant
+    ) {
+        EventSession session =
+                participant.getEventSession();
 
-    return new ParticipantResponse(
-            participant.getId(),
-            participant.getEvent().getId(),
-            participant.getEvent().getName(),
-            session != null ? session.getId() : null,
-            participant.getFullName(),
-            participant.getEmail(),
-            participant.getPhone(),
-            participant.getSource(),
-            participant.getStatus(),
-            participant.getArrivalStatus(),
-            participant.getArrivedAt(),
-            participant.getNotes(),
-            participant.getActive(),
-            participant.getVersion(),
-            participant.getCreatedAt(),
-            participant.getUpdatedAt()
-    );
-}
-
+        return new ParticipantResponse(
+                participant.getId(),
+                participant.getEvent().getId(),
+                participant.getEvent().getName(),
+                session != null ? session.getId() : null,
+                participant.getFullName(),
+                participant.getEmail(),
+                participant.getPhone(),
+                participant.getSource(),
+                participant.getStatus(),
+                participant.getArrivalStatus(),
+                participant.getArrivedAt(),
+                participant.getNotes(),
+                participant.getActive(),
+                participant.getVersion(),
+                participant.getCreatedAt(),
+                participant.getUpdatedAt()
+        );
+    }
 }

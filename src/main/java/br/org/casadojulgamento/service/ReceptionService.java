@@ -1,3 +1,4 @@
+
 package br.org.casadojulgamento.service;
 
 import br.org.casadojulgamento.api.dto.participant.ParticipantResponse;
@@ -63,6 +64,7 @@ public class ReceptionService {
         participant.setArrivalStatus(
                 ParticipantArrivalStatus.ARRIVED
         );
+
         participant.setArrivedAt(LocalDateTime.now());
 
         return salvar(participant);
@@ -105,6 +107,14 @@ public class ReceptionService {
         return response;
     }
 
+    /**
+     * Desfaz a chegada de participantes ARRIVED ou READY_FOR_GROUP.
+     *
+     * Se existir vínculo ativo com um grupo ainda não liberado,
+     * o vínculo será encerrado preservando seu histórico.
+     *
+     * Não altera a inscrição ou a sessão original.
+     */
     @Transactional
     public ParticipantResponse desfazerChegada(
             Long participantId,
@@ -122,15 +132,16 @@ public class ReceptionService {
             );
         }
 
-        if (participantGroupService.possuiVinculoAtivo(participantId)) {
-            throw new BusinessException(
-                    "O participante já integra um grupo. Não é possível desfazer a chegada."
-            );
-        }
+        // Retira o vínculo ativo, se existir.
+        // Grupos RELEASED ou CANCELLED continuam bloqueados.
+        participantGroupService.retirarParticipanteDeGrupoEmFormacao(
+                participantId
+        );
 
         participant.setArrivalStatus(
                 ParticipantArrivalStatus.NOT_ARRIVED
         );
+
         participant.setArrivedAt(null);
 
         return salvar(participant);
@@ -257,6 +268,7 @@ public class ReceptionService {
                     participantRepository.saveAndFlush(participant);
 
             return toResponse(salvo);
+
         } catch (ObjectOptimisticLockingFailureException exception) {
             throw new BusinessException(
                     "O participante foi alterado por outro usuário. Atualize a tela e tente novamente."

@@ -1,3 +1,4 @@
+
 package br.org.casadojulgamento.integration.sympla.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -9,7 +10,10 @@ public record SymplaPaginationResponse(
         Integer quantity,
 
         @JsonProperty("page_size")
-        Integer pageSize
+        Integer pageSize,
+
+        @JsonProperty("next_cursor")
+        String nextCursor
 
 ) {
 }

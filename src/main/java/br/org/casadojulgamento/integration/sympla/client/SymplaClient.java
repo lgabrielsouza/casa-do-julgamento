@@ -1,3 +1,4 @@
+
 package br.org.casadojulgamento.integration.sympla.client;
 
 import br.org.casadojulgamento.integration.sympla.config.SymplaProperties;
@@ -12,9 +13,11 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Component
 @RequiredArgsConstructor
@@ -23,8 +26,8 @@ public class SymplaClient {
     private static final int DEFAULT_PAGE_SIZE = 100;
 
     /*
-     * Proteção defensiva para evitar um loop excessivo
-     * caso a API retorne uma paginação inconsistente.
+     * Limite defensivo para evitar consultas infinitas
+     * em caso de resposta inconsistente da API.
      */
     private static final int MAX_PAGES = 1_000;
 
@@ -87,53 +90,116 @@ public class SymplaClient {
         validarExternalEventId(externalEventId);
 
         /*
-         * LinkedHashMap preserva a ordem recebida da API
-         * e impede duplicações pelo ID externo.
+         * Preserva a ordem de recebimento e evita duplicações
+         * pelo identificador externo do participante.
          */
         Map<String, SymplaParticipantResponse>
                 participantesPorId =
                 new LinkedHashMap<>();
 
+        /*
+         * Guarda os cursores já utilizados para impedir
+         * repetição infinita de páginas.
+         */
+        Set<String> cursoresUtilizados =
+                new HashSet<>();
+
         SymplaParticipantsResponse primeiraPagina =
-                buscarPaginaParticipantes(
-                        externalEventId,
-                        1
+                null;
+
+        String cursor = null;
+        int paginasConsultadas = 0;
+
+        while (true) {
+
+            if (paginasConsultadas >= MAX_PAGES) {
+
+                throw new SymplaApiException(
+                        "A sincronização excedeu o limite de páginas permitido.",
+                        502
                 );
-
-        adicionarParticipantes(
-                participantesPorId,
-                primeiraPagina
-        );
-
-        int totalPaginas =
-                calcularTotalPaginas(
-                        primeiraPagina
-                );
-
-        if (totalPaginas > MAX_PAGES) {
-
-            throw new SymplaApiException(
-                    "A API da Sympla retornou uma quantidade de páginas acima do limite permitido.",
-                    502
-            );
-        }
-
-        for (
-                int pagina = 2;
-                pagina <= totalPaginas;
-                pagina++
-        ) {
+            }
 
             SymplaParticipantsResponse respostaPagina =
                     buscarPaginaParticipantes(
                             externalEventId,
-                            pagina
+                            cursor
                     );
+
+            paginasConsultadas++;
+
+            /*
+             * Uma resposta sem lista de dados não pode ser
+             * considerada uma sincronização válida.
+             *
+             * Assim evitamos marcar como concluída uma
+             * consulta incompleta ou inconsistente.
+             */
+            if (
+                    respostaPagina == null
+                            || respostaPagina.data() == null
+            ) {
+
+                throw new SymplaApiException(
+                        "A Sympla retornou uma resposta de participantes inválida.",
+                        502
+                );
+            }
+
+            if (primeiraPagina == null) {
+                primeiraPagina = respostaPagina;
+            }
 
             adicionarParticipantes(
                     participantesPorId,
                     respostaPagina
             );
+
+            /*
+             * Na API v1.6.0, o próximo lote é identificado
+             * pelo campo pagination.next_cursor.
+             */
+            String proximoCursor =
+                    respostaPagina.pagination() != null
+                            ? respostaPagina
+                                    .pagination()
+                                    .nextCursor()
+                            : null;
+
+            /*
+             * Sem próximo cursor, a paginação terminou.
+             */
+            if (
+                    proximoCursor == null
+                            || proximoCursor.isBlank()
+            ) {
+                break;
+            }
+
+            /*
+             * Proteção contra respostas com cursor cíclico.
+             */
+            if (!cursoresUtilizados.add(proximoCursor)) {
+
+                throw new SymplaApiException(
+                        "A Sympla retornou um cursor de paginação repetido.",
+                        502
+                );
+            }
+
+            /*
+             * Um cursor de continuação acompanhado de uma
+             * página vazia indica resposta inconsistente.
+             */
+            if (respostaPagina.data().isEmpty()) {
+
+                throw new SymplaApiException(
+                        "A Sympla retornou uma página vazia com cursor de continuação.",
+                        502
+                );
+            }
+
+            cursor = proximoCursor;
         }
 
         List<SymplaParticipantResponse>
@@ -155,34 +221,48 @@ public class SymplaClient {
 
     private SymplaParticipantsResponse buscarPaginaParticipantes(
             String externalEventId,
-            int pagina
+            String cursor
     ) {
 
         try {
 
             return symplaRestClient
                     .get()
-                    .uri(uriBuilder ->
-                            uriBuilder
-                                    .path(
-                                            "/v1.6.0/events/{eventId}/participants"
-                                    )
-                                    .queryParam(
-                                            "page",
-                                            pagina
-                                    )
-                                    .queryParam(
-                                            "page_size",
-                                            DEFAULT_PAGE_SIZE
-                                    )
-                                    .queryParam(
-                                            "cancelled_filter",
-                                            "include"
-                                    )
-                                    .build(
-                                            externalEventId
-                                    )
-                    )
+                    .uri(uriBuilder -> {
+
+                        var builder =
+                                uriBuilder
+                                        .path(
+                                                "/v1.6.0/events/{eventId}/participants"
+                                        )
+                                        .queryParam(
+                                                "page_size",
+                                                DEFAULT_PAGE_SIZE
+                                        )
+                                        .queryParam(
+                                                "cancelled_filter",
+                                                "include"
+                                        );
+
+                        /*
+                         * O cursor só é enviado quando existe.
+                         * Na primeira consulta não há cursor.
+                         */
+                        if (
+                                cursor != null
+                                        && !cursor.isBlank()
+                        ) {
+
+                            builder.queryParam(
+                                    "cursor",
+                                    cursor
+                            );
+                        }
+
+                        return builder.build(
+                                externalEventId
+                        );
+                    })
                     .header(
                             "s_token",
                             properties.token()
@@ -209,9 +289,7 @@ public class SymplaClient {
         } catch (RestClientException exception) {
 
             throw new SymplaApiException(
-                    "Não foi possível buscar a página "
-                            + pagina
-                            + " de participantes na Sympla.",
+                    "Não foi possível consultar uma página de participantes na Sympla.",
                     503,
                     exception
             );
@@ -249,44 +327,6 @@ public class SymplaClient {
                     participant
             );
         }
-    }
-
-    private int calcularTotalPaginas(
-            SymplaParticipantsResponse response
-    ) {
-
-        if (
-                response == null
-                        || response.pagination() == null
-                        || response.pagination().quantity()
-                        == null
-        ) {
-            return 1;
-        }
-
-        int quantidade =
-                response.pagination().quantity();
-
-        Integer pageSizeRetornado =
-                response.pagination().pageSize();
-
-        int tamanhoPagina =
-                pageSizeRetornado != null
-                        && pageSizeRetornado > 0
-                        ? pageSizeRetornado
-                        : DEFAULT_PAGE_SIZE;
-
-        if (quantidade <= 0) {
-            return 1;
-        }
-
-        return Math.max(
-                1,
-                (int) Math.ceil(
-                        (double) quantidade
-                                / tamanhoPagina
-                )
-        );
     }
 
     public JsonNode buscarApresentacoes(
@@ -375,11 +415,8 @@ public class SymplaClient {
     }
 
     /*
-     * O corpo retornado pela Sympla não é incluído na mensagem
-     * da exceção.
-     *
-     * A resposta externa pode conter informações que não devem
-     * ser propagadas para logs ou respostas internas da aplicação.
+     * O corpo da resposta externa não é incluído na
+     * exceção, evitando exposição de dados sensíveis.
      */
     private SymplaApiException criarExcecaoApi(
             int statusCode

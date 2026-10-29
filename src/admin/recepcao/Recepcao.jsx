@@ -4,7 +4,6 @@ import {
   useRef,
   useState,
 } from 'react'
-
 import { useNavigate } from 'react-router-dom'
 import Toast from '../../components/ui/Toast'
 import { listarEventos } from '../../services/eventService'
@@ -18,11 +17,8 @@ import {
   marcarProntoParaGrupo,
   registrarChegada,
 } from '../../services/receptionService'
-
 import RecepcaoTabs from './RecepcaoTabs'
-
 import './Recepcao.css'
-
 const STATUS_CONFIG = {
   NOT_ARRIVED: {
     label: 'Não chegou',
@@ -37,60 +33,48 @@ const STATUS_CONFIG = {
     className: 'pronto',
   },
 }
-
 function formatarTelefone(phone) {
   if (!phone) {
     return '—'
   }
-
   const numeros = phone.replace(/\D/g, '')
-
   if (numeros.length === 11) {
     return `(${numeros.slice(0, 2)}) ${numeros.slice(
       2,
       7,
     )}-${numeros.slice(7)}`
   }
-
   if (numeros.length === 10) {
     return `(${numeros.slice(0, 2)}) ${numeros.slice(
       2,
       6,
     )}-${numeros.slice(6)}`
   }
-
   return phone
 }
-
 function formatarData(data) {
   if (!data) {
     return '—'
   }
-
   const [ano, mes, dia] = data
     .split('-')
     .map(Number)
-
   return new Intl.DateTimeFormat('pt-BR').format(
     new Date(ano, mes - 1, dia),
   )
 }
-
 function formatarHorario(horario) {
   return horario?.slice(0, 5) || '—'
 }
-
 function formatarChegada(dataHora) {
   if (!dataHora) {
     return '—'
   }
-
   return new Intl.DateTimeFormat('pt-BR', {
     hour: '2-digit',
     minute: '2-digit',
   }).format(new Date(dataHora))
 }
-
 function ParticipanteItem({
   participante,
   selecionado,
@@ -101,7 +85,6 @@ function ParticipanteItem({
   const status =
     STATUS_CONFIG[participante.arrivalStatus] ||
     STATUS_CONFIG.NOT_ARRIVED
-
   return (
     <button
       type="button"
@@ -119,10 +102,8 @@ function ParticipanteItem({
           ? '✓'
           : ''}
       </span>
-
       <span className="recepcao-participante-main">
         <strong>{participante.fullName}</strong>
-
         <small>
           {sessao
             ? `${formatarData(
@@ -132,7 +113,6 @@ function ParticipanteItem({
               )}`
             : 'Sem sessão'}
         </small>
-
         {disponibilidade && (
           <small>
             Grupo: {disponibilidade.occupancy}/
@@ -140,7 +120,6 @@ function ParticipanteItem({
           </small>
         )}
       </span>
-
       <span className="recepcao-participante-meta">
         {participante.arrivedAt
           ? formatarChegada(participante.arrivedAt)
@@ -149,7 +128,6 @@ function ParticipanteItem({
     </button>
   )
 }
-
 function ListaParticipantes({
   titulo,
   quantidade,
@@ -167,17 +145,14 @@ function ListaParticipantes({
           <span className="recepcao-lista-label">
             {titulo}
           </span>
-
           <strong>{quantidade}</strong>
         </div>
       </header>
-
       <div className="recepcao-lista-content">
         {participantes.length > 0 ? (
           participantes.map((participante) => {
             const sessaoId =
               participante.eventSessionId
-
             return (
               <ParticipanteItem
                 key={participante.id}
@@ -213,44 +188,80 @@ function ListaParticipantes({
     </section>
   )
 }
+/*
+ * Busca todas as páginas da Recepção. A API devolve um Page do Spring;
+ * não limitar a consulta ao primeiro lote de 500 participantes.
+ */
+async function listarTodosParticipantesRecepcao(eventId) {
+  const tamanhoPagina = 200
+  const maximoPaginas = 1000
+  const porId = new Map()
+
+  for (let pagina = 0; pagina < maximoPaginas; pagina += 1) {
+    const resposta = await listarParticipantesRecepcao({
+      eventId,
+      page: pagina,
+      size: tamanhoPagina,
+      sort: 'fullName,asc',
+    })
+
+    const itens = resposta?.content
+    if (!Array.isArray(itens)) {
+      throw new Error('A Recepção recebeu uma lista de participantes inválida.')
+    }
+
+    for (const item of itens) {
+      if (item?.id != null) {
+        porId.set(item.id, item)
+      }
+    }
+
+    const totalPaginas = resposta.totalPages
+    const ultimaPagina = resposta.last
+
+    if (ultimaPagina === true ||
+        (Number.isInteger(totalPaginas) && pagina + 1 >= totalPaginas) ||
+        itens.length === 0) {
+      return Array.from(porId.values())
+    }
+
+    if (ultimaPagina == null && totalPaginas == null && itens.length < tamanhoPagina) {
+      return Array.from(porId.values())
+    }
+  }
+
+  throw new Error('A listagem da Recepção excedeu o limite de segurança de páginas.')
+}
 
 function Recepcao() {
   const buscaInputRef = useRef(null)
-
   const navigate = useNavigate()
-
   const [eventos, setEventos] = useState([])
   const [sessoes, setSessoes] = useState([])
   const [disponibilidade, setDisponibilidade] =
     useState([])
   const [participantes, setParticipantes] =
     useState([])
-
   const [
     eventoSelecionadoId,
     setEventoSelecionadoId,
   ] = useState('')
-
   const [
     sessaoSelecionadaId,
     setSessaoSelecionadaId,
   ] = useState('')
-
   const [
     participanteSelecionado,
     setParticipanteSelecionado,
   ] = useState(null)
-
   const [
     dataGrupoSelecionada,
     setDataGrupoSelecionada,
   ] = useState('')
-
   const [
     sessaoGrupoDestinoId,
     setSessaoGrupoDestinoId,
   ] = useState('')
-
   const [busca, setBusca] = useState('')
   const [carregando, setCarregando] =
     useState(true)
@@ -258,7 +269,6 @@ function Recepcao() {
     useState(false)
   const [erro, setErro] = useState('')
   const [sucesso, setSucesso] = useState('')
-
   const eventoSelecionado = useMemo(
     () =>
       eventos.find(
@@ -268,7 +278,6 @@ function Recepcao() {
       ) || null,
     [eventos, eventoSelecionadoId],
   )
-
   const sessoesPorId = useMemo(
     () =>
       new Map(
@@ -279,7 +288,6 @@ function Recepcao() {
       ),
     [sessoes],
   )
-
   const disponibilidadePorSessao = useMemo(
     () =>
       new Map(
@@ -290,7 +298,6 @@ function Recepcao() {
       ),
     [disponibilidade],
   )
-
   const sessaoFiltrada = useMemo(
     () =>
       sessoes.find(
@@ -300,7 +307,6 @@ function Recepcao() {
       ) || null,
     [sessoes, sessaoSelecionadaId],
   )
-
   const datasDisponiveis = useMemo(
     () =>
       [
@@ -312,7 +318,6 @@ function Recepcao() {
       ].sort(),
     [disponibilidade],
   )
-
   const sessoesDaDataSelecionada = useMemo(
     () =>
       disponibilidade.filter(
@@ -321,41 +326,33 @@ function Recepcao() {
       ),
     [disponibilidade, dataGrupoSelecionada],
   )
-
   const participantesFiltrados = useMemo(() => {
     const termo = busca.trim().toLowerCase()
     const numeros = termo.replace(/\D/g, '')
-
     return participantes.filter((participante) => {
       const correspondeSessao =
         !sessaoSelecionadaId ||
         String(participante.eventSessionId) ===
           String(sessaoSelecionadaId)
-
       const correspondeNome =
         participante.fullName
           ?.toLowerCase()
           .includes(termo) ?? false
-
       const correspondeEmail =
         participante.email
           ?.toLowerCase()
           .includes(termo) ?? false
-
       const telefoneNumeros =
         participante.phone
           ?.replace(/\D/g, '') ?? ''
-
       const correspondeTelefone =
         numeros.length > 0 &&
         telefoneNumeros.includes(numeros)
-
       const correspondeBusca =
         !termo ||
         correspondeNome ||
         correspondeEmail ||
         correspondeTelefone
-
       return correspondeSessao && correspondeBusca
     })
   }, [
@@ -363,7 +360,6 @@ function Recepcao() {
     busca,
     sessaoSelecionadaId,
   ])
-
   const naoChegaram = useMemo(
     () =>
       participantesFiltrados.filter(
@@ -373,7 +369,6 @@ function Recepcao() {
       ),
     [participantesFiltrados],
   )
-
   const chegaram = useMemo(
     () =>
       participantesFiltrados.filter(
@@ -383,7 +378,6 @@ function Recepcao() {
       ),
     [participantesFiltrados],
   )
-
   const prontos = useMemo(
     () =>
       participantesFiltrados.filter(
@@ -393,19 +387,15 @@ function Recepcao() {
       ),
     [participantesFiltrados],
   )
-
   const resumo = useMemo(() => {
     const total = participantesFiltrados.length
-
     const chegaramTotal =
       chegaram.length + prontos.length
-
     const semSessao =
       participantesFiltrados.filter(
         (participante) =>
           participante.eventSessionId == null,
       ).length
-
     return {
       total,
       chegaram: chegaramTotal,
@@ -419,14 +409,12 @@ function Recepcao() {
     prontos,
     naoChegaram,
   ])
-
   const percentualChegada =
     resumo.total > 0
       ? Math.round(
           (resumo.chegaram / resumo.total) * 100,
         )
       : 0
-
   const sessaoDoSelecionado =
     participanteSelecionado?.eventSessionId
       ? sessoesPorId.get(
@@ -435,7 +423,6 @@ function Recepcao() {
           ),
         )
       : null
-
   const disponibilidadeSessaoAtual =
     participanteSelecionado?.eventSessionId
       ? disponibilidadePorSessao.get(
@@ -444,39 +431,32 @@ function Recepcao() {
           ),
         )
       : null
-
   const destinoSelecionado =
     sessaoGrupoDestinoId
       ? disponibilidadePorSessao.get(
           String(sessaoGrupoDestinoId),
         )
       : null
-
   const statusSelecionado =
     participanteSelecionado
       ? STATUS_CONFIG[
           participanteSelecionado.arrivalStatus
         ]
       : null
-
   const participantePronto =
     participanteSelecionado?.arrivalStatus ===
     'READY_FOR_GROUP'
-
   const mesmaSessao =
     participanteSelecionado?.eventSessionId != null &&
     String(
       participanteSelecionado.eventSessionId,
     ) === String(sessaoGrupoDestinoId)
-
 const grupoAtualLiberado =
   disponibilidadeSessaoAtual?.groupStatus ===
   'RELEASED'
-
 const grupoAtualCancelado =
   disponibilidadeSessaoAtual?.groupStatus ===
   'CANCELLED'
-
 const podeAlocar =
   participantePronto &&
   !grupoAtualLiberado &&
@@ -490,39 +470,31 @@ const podeAlocar =
   destinoSelecionado.status !== 'CANCELLED' &&
   destinoSelecionado.groupStatus !== 'RELEASED' &&
   destinoSelecionado.groupStatus !== 'CANCELLED'
-
   useEffect(() => {
     carregarEventos()
   }, [])
-
   useEffect(() => {
     if (!eventoSelecionadoId) {
       return
     }
-
     carregarDadosDoEvento(eventoSelecionadoId)
   }, [eventoSelecionadoId])
-
   useEffect(() => {
     if (!sucesso) {
       return undefined
     }
-
     const timeout = window.setTimeout(
       () => setSucesso(''),
       3500,
     )
-
     return () => window.clearTimeout(timeout)
   }, [sucesso])
-
   useEffect(() => {
     if (!participanteSelecionado) {
       setDataGrupoSelecionada('')
       setSessaoGrupoDestinoId('')
       return
     }
-
     if (participanteSelecionado.eventSessionId) {
       const atual =
         disponibilidadePorSessao.get(
@@ -530,21 +502,16 @@ const podeAlocar =
             participanteSelecionado.eventSessionId,
           ),
         )
-
       if (atual) {
         setDataGrupoSelecionada(atual.date)
-
         setSessaoGrupoDestinoId(
           String(atual.sessionId),
         )
-
         return
       }
     }
-
     const primeiraData =
       datasDisponiveis[0] || ''
-
     setDataGrupoSelecionada(primeiraData)
     setSessaoGrupoDestinoId('')
   }, [
@@ -552,17 +519,14 @@ const podeAlocar =
     disponibilidadePorSessao,
     datasDisponiveis,
   ])
-
   function focarBusca() {
     window.setTimeout(() => {
       buscaInputRef.current?.focus()
     }, 50)
   }
-
   async function carregarEventos() {
     setCarregando(true)
     setErro('')
-
     try {
       const resposta = await listarEventos({
         page: 0,
@@ -570,11 +534,8 @@ const podeAlocar =
         active: true,
         sort: 'startDate,asc',
       })
-
       const lista = resposta.content || []
-
       setEventos(lista)
-
       if (lista.length > 0) {
         setEventoSelecionadoId(
           String(lista[0].id),
@@ -585,29 +546,20 @@ const podeAlocar =
         error.message ||
           'Não foi possível carregar os eventos.',
       )
-
       setCarregando(false)
     }
   }
-
   async function carregarDadosDoEvento(eventId) {
     setCarregando(true)
     setErro('')
     setParticipanteSelecionado(null)
-
     try {
       const [
         respostaParticipantes,
         respostaSessoes,
         respostaDisponibilidade,
       ] = await Promise.all([
-        listarParticipantesRecepcao({
-          eventId,
-          page: 0,
-          size: 500,
-          sort: 'fullName,asc',
-        }),
-
+        listarTodosParticipantesRecepcao(eventId),
         listarSessoes({
           eventId,
           active: true,
@@ -618,22 +570,15 @@ const podeAlocar =
             'startTime,asc',
           ],
         }),
-
         listarSessoesParaGrupos(eventId),
       ])
-
-      setParticipantes(
-        respostaParticipantes.content || [],
-      )
-
+      setParticipantes(respostaParticipantes)
       setSessoes(
         respostaSessoes.content || [],
       )
-
       setDisponibilidade(
         respostaDisponibilidade || [],
       )
-
       focarBusca()
     } catch (error) {
       setErro(
@@ -644,7 +589,6 @@ const podeAlocar =
       setCarregando(false)
     }
   }
-
   async function recarregarMantendoParticipante(
     eventId,
     participantId,
@@ -655,13 +599,7 @@ const podeAlocar =
         respostaSessoes,
         respostaDisponibilidade,
       ] = await Promise.all([
-        listarParticipantesRecepcao({
-          eventId,
-          page: 0,
-          size: 500,
-          sort: 'fullName,asc',
-        }),
-
+        listarTodosParticipantesRecepcao(eventId),
         listarSessoes({
           eventId,
           active: true,
@@ -672,29 +610,21 @@ const podeAlocar =
             'startTime,asc',
           ],
         }),
-
         listarSessoesParaGrupos(eventId),
       ])
-
-      const listaAtualizada =
-        respostaParticipantes.content || []
-
+      const listaAtualizada = respostaParticipantes
       setParticipantes(listaAtualizada)
-
       setSessoes(
         respostaSessoes.content || [],
       )
-
       setDisponibilidade(
         respostaDisponibilidade || [],
       )
-
       const participanteAtualizado =
         listaAtualizada.find(
           (participante) =>
             participante.id === participantId,
         ) || null
-
       setParticipanteSelecionado(
         participanteAtualizado,
       )
@@ -702,7 +632,6 @@ const podeAlocar =
       // Mantém a mensagem da operação original.
     }
   }
-
   function atualizarParticipanteNaLista(
     participanteAtualizado,
   ) {
@@ -714,12 +643,10 @@ const podeAlocar =
           : participante,
       ),
     )
-
     setParticipanteSelecionado(
       participanteAtualizado,
     )
   }
-
   function selecionarProximoPendente(
     participanteAtual,
   ) {
@@ -727,12 +654,10 @@ const podeAlocar =
       (participante) =>
         participante.id !== participanteAtual.id,
     )
-
     setParticipanteSelecionado(proximo || null)
     setBusca('')
     focarBusca()
   }
-
   async function executarAcao(
     acao,
     mensagem,
@@ -741,26 +666,20 @@ const podeAlocar =
     if (!participanteSelecionado) {
       return
     }
-
     const participanteEmAtendimento =
       participanteSelecionado
-
     setProcessando(true)
     setErro('')
-
     try {
       const participanteAtualizado =
         await acao(
           participanteEmAtendimento.id,
           participanteEmAtendimento.version,
         )
-
       atualizarParticipanteNaLista(
         participanteAtualizado,
       )
-
       setSucesso(mensagem)
-
       if (opcoes.selecionarProximo) {
         selecionarProximoPendente(
           participanteEmAtendimento,
@@ -771,7 +690,6 @@ const podeAlocar =
         error.message ||
           'Não foi possível concluir a operação.',
       )
-
       await recarregarMantendoParticipante(
         eventoSelecionadoId,
         participanteEmAtendimento.id,
@@ -780,21 +698,18 @@ const podeAlocar =
       setProcessando(false)
     }
   }
-
   async function registrarChegadaSelecionado() {
     await executarAcao(
       registrarChegada,
       'Chegada registrada. Agora o participante pode ser marcado como pronto.',
     )
   }
-
   async function marcarSelecionadoPronto() {
     await executarAcao(
       marcarProntoParaGrupo,
       'Participante pronto para grupo.',
     )
   }
-
   async function desfazerChegadaSelecionado() {
     await executarAcao(
       desfazerChegada,
@@ -804,7 +719,6 @@ const podeAlocar =
       },
     )
   }
-
   async function confirmarGrupo() {
     if (
       !participanteSelecionado ||
@@ -813,28 +727,22 @@ const podeAlocar =
     ) {
       return
     }
-
     const participanteAtual =
       participanteSelecionado
-
     const tinhaSessao =
       participanteAtual.eventSessionId != null
-
     setProcessando(true)
     setErro('')
-
     try {
       await alocarParticipanteNaSessao(
         participanteAtual.id,
         Number(sessaoGrupoDestinoId),
       )
-
       setSucesso(
         tinhaSessao
           ? 'Participante movido para o novo grupo.'
           : 'Participante alocado no grupo com sucesso.',
       )
-
       await recarregarMantendoParticipante(
         eventoSelecionadoId,
         participanteAtual.id,
@@ -844,7 +752,6 @@ const podeAlocar =
         error.message ||
           'Não foi possível alocar o participante no grupo.',
       )
-
       await recarregarMantendoParticipante(
         eventoSelecionadoId,
         participanteAtual.id,
@@ -853,7 +760,6 @@ const podeAlocar =
       setProcessando(false)
     }
   }
-
   async function liberarGrupoSelecionado() {
   if (
     !participanteSelecionado?.eventSessionId ||
@@ -862,20 +768,15 @@ const podeAlocar =
   ) {
     return
   }
-
   const participanteAtual =
     participanteSelecionado
-
   setProcessando(true)
   setErro('')
-
   try {
     await liberarGrupo(
       participanteAtual.eventSessionId,
     )
-
     setSucesso('Grupo liberado com sucesso.')
-
     await recarregarMantendoParticipante(
       eventoSelecionadoId,
       participanteAtual.id,
@@ -885,7 +786,6 @@ const podeAlocar =
       error.message ||
         'Não foi possível liberar o grupo.',
     )
-
     await recarregarMantendoParticipante(
       eventoSelecionadoId,
       participanteAtual.id,
@@ -894,7 +794,6 @@ const podeAlocar =
     setProcessando(false)
   }
 }
-
   return (
     <div className="recepcao-page">
       <Toast
@@ -903,34 +802,27 @@ const podeAlocar =
         visivel={Boolean(sucesso)}
       />
     <RecepcaoTabs />
-    
       <header className="recepcao-page-header">
         <div>
           <p className="recepcao-eyebrow">
             Operação do evento
           </p>
-
           <h1>Recepção</h1>
-
           <p>
             Registre chegadas, prepare os
             participantes e organize os grupos.
           </p>
         </div>
-
         <div className="recepcao-header-operation">
           <div>
             <span>Evento</span>
-
             <strong>
               {eventoSelecionado?.name ||
                 'Nenhum evento'}
             </strong>
           </div>
-
           <div>
             <span>Sessão visualizada</span>
-
             <strong>
               {sessaoFiltrada
                 ? `${formatarHorario(
@@ -941,25 +833,21 @@ const podeAlocar =
                 : 'Todas as sessões'}
             </strong>
           </div>
-
           <span className="recepcao-evento-ativo">
             Evento ativo
           </span>
         </div>
       </header>
-
       {erro && (
         <div className="recepcao-alert">
           {erro}
         </div>
       )}
-
       <section className="recepcao-toolbar">
         <div className="recepcao-toolbar-group">
           <label htmlFor="eventoRecepcao">
             Evento
           </label>
-
           <select
             id="eventoRecepcao"
             value={eventoSelecionadoId}
@@ -967,7 +855,6 @@ const podeAlocar =
               setEventoSelecionadoId(
                 event.target.value,
               )
-
               setSessaoSelecionadaId('')
               setBusca('')
             }}
@@ -982,12 +869,10 @@ const podeAlocar =
             ))}
           </select>
         </div>
-
         <div className="recepcao-toolbar-group">
           <label htmlFor="sessaoRecepcao">
             Sessão
           </label>
-
           <select
             id="sessaoRecepcao"
             value={sessaoSelecionadaId}
@@ -995,14 +880,12 @@ const podeAlocar =
               setSessaoSelecionadaId(
                 event.target.value,
               )
-
               setParticipanteSelecionado(null)
             }}
           >
             <option value="">
               Todas as sessões
             </option>
-
             {sessoes.map((sessao) => (
               <option
                 key={sessao.id}
@@ -1017,12 +900,10 @@ const podeAlocar =
             ))}
           </select>
         </div>
-
         <div className="recepcao-search">
           <label htmlFor="buscaRecepcao">
             Buscar participante
           </label>
-
           <input
             ref={buscaInputRef}
             id="buscaRecepcao"
@@ -1034,7 +915,6 @@ const podeAlocar =
             }
           />
         </div>
-
         <button
           type="button"
           className="recepcao-refresh-button"
@@ -1049,7 +929,6 @@ const podeAlocar =
             ? 'Atualizando...'
             : 'Atualizar'}
         </button>
-
         <div className="recepcao-print-tooltip">
           <button
             type="button"
@@ -1066,7 +945,6 @@ const podeAlocar =
           >
             Imprimir lista
           </button>
-
           {!sessaoSelecionadaId && (
             <span className="recepcao-print-tooltip-text">
               Selecione uma sessão para imprimir
@@ -1074,35 +952,29 @@ const podeAlocar =
           )}
         </div>
       </section>
-
       <section className="recepcao-summary">
         <div>
           <span>Esperados</span>
           <strong>{resumo.total}</strong>
         </div>
-
         <div className="chegaram">
           <span>Chegaram</span>
           <strong>{resumo.chegaram}</strong>
           <small>{percentualChegada}%</small>
         </div>
-
         <div className="prontos">
           <span>Prontos para grupo</span>
           <strong>{resumo.prontos}</strong>
         </div>
-
         <div className="pendentes">
           <span>Ainda não chegaram</span>
           <strong>{resumo.naoChegaram}</strong>
         </div>
-
         <div className="sem-sessao">
           <span>Sem sessão</span>
           <strong>{resumo.semSessao}</strong>
         </div>
       </section>
-
       {carregando ? (
         <div className="recepcao-loading">
           Carregando operação da Recepção...
@@ -1126,7 +998,6 @@ const podeAlocar =
                 setParticipanteSelecionado
               }
             />
-
             <ListaParticipantes
               titulo="Chegaram"
               quantidade={chegaram.length}
@@ -1143,7 +1014,6 @@ const podeAlocar =
                 setParticipanteSelecionado
               }
             />
-
             <ListaParticipantes
               titulo="Prontos para grupo"
               quantidade={prontos.length}
@@ -1161,7 +1031,6 @@ const podeAlocar =
               }
             />
           </div>
-
           <aside className="recepcao-detail-panel">
             {participanteSelecionado ? (
               <>
@@ -1171,55 +1040,45 @@ const podeAlocar =
                       .charAt(0)
                       .toUpperCase()}
                   </div>
-
                   <div>
                     <span>
                       Participante selecionado
                     </span>
-
                     <h2>
                       {
                         participanteSelecionado.fullName
                       }
                     </h2>
-
                     <p>
                       {formatarTelefone(
                         participanteSelecionado.phone,
                       )}
                     </p>
-
                     <small>
                       {participanteSelecionado.email ||
                         'Sem e-mail'}
                     </small>
                   </div>
                 </div>
-
                 <div className="recepcao-detail-grid">
                   <div>
                     <span>Status atual</span>
-
                     <strong
                       className={`recepcao-detail-status ${statusSelecionado?.className}`}
                     >
                       {statusSelecionado?.label}
                     </strong>
                   </div>
-
                   <div>
                     <span>Horário da chegada</span>
-
                     <strong>
                       {formatarChegada(
                         participanteSelecionado.arrivedAt,
                       )}
                     </strong>
                   </div>
-
                   <div>
                     <span>Grupo atual</span>
-
                     <strong>
                       {sessaoDoSelecionado
                         ? `${formatarHorario(
@@ -1229,7 +1088,6 @@ const podeAlocar =
                           )}`
                         : 'Sem grupo'}
                     </strong>
-
                     {disponibilidadeSessaoAtual && (
                       <small>
                         {
@@ -1243,10 +1101,8 @@ const podeAlocar =
                       </small>
                     )}
                   </div>
-
                   <div>
                     <span>Origem</span>
-
                     <strong>
                       {
                         participanteSelecionado.source
@@ -1254,13 +1110,11 @@ const podeAlocar =
                     </strong>
                   </div>
                 </div>
-
                 {participantePronto && (
                   <div className="recepcao-session-control">
                     <label htmlFor="dataGrupo">
                       Data do grupo
                     </label>
-
                     <select
                       id="dataGrupo"
                       value={dataGrupoSelecionada}
@@ -1268,7 +1122,6 @@ const podeAlocar =
                         setDataGrupoSelecionada(
                           event.target.value,
                         )
-
                         setSessaoGrupoDestinoId('')
                       }}
                       disabled={processando}
@@ -1276,7 +1129,6 @@ const podeAlocar =
                       <option value="">
                         Selecione a data
                       </option>
-
                       {datasDisponiveis.map((data) => (
                         <option
                           key={data}
@@ -1286,11 +1138,9 @@ const podeAlocar =
                         </option>
                       ))}
                     </select>
-
                     <label htmlFor="grupoDestino">
                       Sessão / grupo
                     </label>
-
                     <select
                       id="grupoDestino"
                       value={sessaoGrupoDestinoId}
@@ -1307,7 +1157,6 @@ const podeAlocar =
                       <option value="">
                         Selecione o grupo
                       </option>
-
                       {sessoesDaDataSelecionada.map(
                         (sessao) => {
                           const atual =
@@ -1315,18 +1164,14 @@ const podeAlocar =
                               participanteSelecionado.eventSessionId,
                             ) ===
                             String(sessao.sessionId)
-
                             const lotada =
                               sessao.available <= 0 &&
                               !atual
-
                             const cancelada =
                               sessao.status === 'CANCELLED' ||
                               sessao.groupStatus === 'CANCELLED'
-
                             const liberada =
                               sessao.groupStatus === 'RELEASED'
-
                             return (
                               <option
                                 key={sessao.sessionId}
@@ -1349,7 +1194,6 @@ const podeAlocar =
                                 : `${sessao.available} vagas`}
                               {' — '}
                               {sessao.groupStatus}
-
                               {atual
                                 ? ' — ATUAL'
                                 : ''}
@@ -1358,7 +1202,6 @@ const podeAlocar =
                         },
                       )}
                     </select>
-
                     {destinoSelecionado && (
                       <div className="recepcao-intermediate-alert">
                         <strong>
@@ -1374,7 +1217,6 @@ const podeAlocar =
                         {' vagas disponíveis'}
                       </div>
                     )}
-
                     <button
                       type="button"
                       className="recepcao-action pronto"
@@ -1393,7 +1235,6 @@ const podeAlocar =
                     </button>
                   </div>
                 )}
-
                 {!participantePronto && (
                   <div className="recepcao-intermediate-alert">
                     A seleção de grupo ficará
@@ -1401,16 +1242,13 @@ const podeAlocar =
                     estiver pronto para grupo.
                   </div>
                 )}
-
                 <div className="recepcao-observacoes">
                   <span>Observações</span>
-
                   <p>
                     {participanteSelecionado.notes ||
                       'Nenhuma observação registrada.'}
                   </p>
                 </div>
-
                 {participanteSelecionado.arrivalStatus ===
                   'ARRIVED' && (
                   <div className="recepcao-intermediate-alert">
@@ -1420,7 +1258,6 @@ const podeAlocar =
                     grupo.
                   </div>
                 )}
-
                 <div className="recepcao-actions">
                   <button
                     type="button"
@@ -1436,7 +1273,6 @@ const podeAlocar =
                   >
                     Registrar chegada
                   </button>
-
                   <button
                     type="button"
                     className="recepcao-action pronto"
@@ -1467,7 +1303,6 @@ const podeAlocar =
                         ? 'Grupo liberado'
                         : 'Liberar grupo'}
                     </button>
-
                   <button
                     type="button"
                     className="recepcao-action desfazer"
@@ -1489,7 +1324,6 @@ const podeAlocar =
                 <strong>
                   Selecione um participante
                 </strong>
-
                 <p>
                   Pesquise ou clique em um nome para
                   visualizar os dados e executar as
@@ -1503,5 +1337,4 @@ const podeAlocar =
     </div>
   )
 }
-
 export default Recepcao
